@@ -8,6 +8,14 @@ class RadioButtonsBloc {
 
   Stream<Map<String, bool>> get genderStream => _genderBloc.stream;
 
+  String get value {
+    if (_genderBloc.value['female'] == true) {
+      return 'Female';
+    }
+
+    return 'Male';
+  }
+
   selectGender(String key) {
     Map<String, bool> map;
 
@@ -36,6 +44,8 @@ class RadioButtonsBloc {
     }
     _termsAndConditionsCntrl.sink.add(true);
   }
+
+  bool get iAgree => _termsAndConditionsCntrl.value;
 
   dispose() {
     _genderBloc.close();

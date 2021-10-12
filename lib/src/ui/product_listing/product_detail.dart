@@ -18,6 +18,8 @@ class ProductDetail extends StatefulWidget {
 }
 
 class _ProductDetailState extends State<ProductDetail> {
+  bool _isOutOfStock = true;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -102,13 +104,18 @@ class _ProductDetailState extends State<ProductDetail> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     _price(),
-                    IconButton(
-                      onPressed: () {},
-                      icon: Icon(
-                        Icons.share,
-                        color: LightGrey,
-                        size: 20.sp,
-                      ),
+                    Row(
+                      children: [
+                        _isOutOfStock ? _outOfStock() : SizedBox(),
+                        IconButton(
+                          onPressed: () {},
+                          icon: Icon(
+                            Icons.share,
+                            color: LightGrey,
+                            size: 20.sp,
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
@@ -201,6 +208,16 @@ galley of type and scrambled it to make a type specimen book it has?
           ),
         ),
       ],
+    );
+  }
+
+  Text _outOfStock() {
+    return Text(
+      "Out of Stock",
+      style: TextStyle(
+        color: Red,
+        fontWeight: FontWeight.w600,
+      ),
     );
   }
 

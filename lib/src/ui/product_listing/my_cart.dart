@@ -4,6 +4,7 @@ import 'package:neosoft_training_application/src/blocs/my_cart_quantity_BLOC.dar
 import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/constants/quantity_list.dart';
 import 'package:neosoft_training_application/src/models/my_cart_model.dart';
+import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/my_cart.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
 import 'package:sizer/sizer.dart';
@@ -182,8 +183,9 @@ class _MyCartState extends State<MyCart> {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                _QuantityDropDown(
-                  quantity: items[index].quantity,
+                _Quantity(
+                  items: items,
+                  index: index,
                 ),
                 _price(index),
               ],
@@ -234,6 +236,210 @@ class _MyCartState extends State<MyCart> {
       height: 0,
       color: Colors.grey,
       thickness: 1,
+    );
+  }
+}
+
+class _Quantity extends StatefulWidget {
+  const _Quantity({
+    Key? key,
+    required this.index,
+    required this.items,
+  }) : super(key: key);
+
+  final List<MyCartModel> items;
+  final int index;
+
+  @override
+  __QuantityState createState() => __QuantityState();
+}
+
+class __QuantityState extends State<_Quantity> {
+  late MyCartQtyBLOC _myCartQtyBLOC;
+
+  @override
+  void dispose() {
+    _myCartQtyBLOC.dispose();
+    super.dispose();
+  }
+
+  @override
+  void initState() {
+    _myCartQtyBLOC = new MyCartQtyBLOC();
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      onTap: () {
+        _showQuantityDialog(widget.index);
+      },
+      child: Container(
+        margin: EdgeInsets.all(3),
+        alignment: Alignment.center,
+        color: Colors.grey[200],
+        height: 4.5.h,
+        width: 11.w,
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            StreamBuilder<int>(
+              initialData: 1,
+              stream: _myCartQtyBLOC.stream,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return Text(
+                    '${snapshot.data}',
+                    style: TextStyle(
+                      color: LightGrey,
+                    ),
+                  );
+                }
+                return SizedBox();
+              },
+            ),
+            Icon(
+              Icons.keyboard_arrow_down_sharp,
+              size: 14.sp,
+              color: Grey,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  _showQuantityDialog(int index) {
+    return showDialog(
+      context: context,
+      builder: (context) {
+        return _QuantityDialogUI(
+          items: widget.items,
+          index: index,
+          myCartQtyBLOC: _myCartQtyBLOC,
+        );
+      },
+    );
+  }
+}
+
+class _QuantityDialogUI extends StatelessWidget {
+  const _QuantityDialogUI({
+    Key? key,
+    required this.items,
+    required this.index,
+    required this.myCartQtyBLOC,
+  }) : super(key: key);
+
+  final List<MyCartModel> items;
+  final int index;
+  final double height = 2;
+  final MyCartQtyBLOC myCartQtyBLOC;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: EdgeInsets.symmetric(vertical: 11.h, horizontal: 20),
+      color: Colors.green,
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
+        body: Center(
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.spaceAround,
+              children: [
+                Text(
+                  items[index].productName!,
+                  style: TextStyle(
+                    color: Black,
+                    fontSize: 18.sp,
+                  ),
+                ),
+                SizedBox(height: height.h),
+                Container(
+                  height: 35.h,
+                  width: 80.w,
+                  decoration: BoxDecoration(
+                    image: DecorationImage(
+                      image: CachedNetworkImageProvider(
+                        items[index].productImage!,
+                      ),
+                    ),
+                  ),
+                ),
+                SizedBox(height: height.h),
+                Text(
+                  'Enter Qty',
+                  style: TextStyle(
+                    color: Black,
+                    fontSize: 13.sp,
+                  ),
+                ),
+                SizedBox(height: height.h),
+                Container(
+                  width: 25.w,
+                  child: TextFormField(
+                    initialValue: '1',
+                    cursorColor: Black,
+                    decoration: InputDecoration(
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.only(),
+                        borderSide: BorderSide(
+                          color: Colors.green,
+                          width: 2,
+                        ),
+                      ),
+                      filled: true,
+                      fillColor: White,
+                      isDense: true,
+                      focusColor: Colors.green,
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.only(),
+                        borderSide: BorderSide(
+                          color: Colors.green,
+                          width: 2,
+                        ),
+                      ),
+                    ),
+                    style: TextStyle(fontSize: 9.sp),
+                    onChanged: (val) {
+                      int value = int.tryParse(val)!;
+                      myCartQtyBLOC.setValue(value);
+                    },
+                  ),
+                ),
+                SizedBox(height: height.h),
+                Container(
+                  margin: EdgeInsets.symmetric(
+                    vertical: 5,
+                    horizontal: 20.w,
+                  ),
+                  child: MaterialButton(
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(5),
+                    ),
+                    color: Red,
+                    onPressed: () {
+                      Pop(context);
+                    },
+                    child: Center(
+                      heightFactor: 2.5,
+                      child: Text(
+                        'SUBMIT',
+                        style: TextStyle(
+                          fontSize: 14.5.sp,
+                          color: White,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 }

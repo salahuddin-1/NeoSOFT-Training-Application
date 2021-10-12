@@ -1,6 +1,10 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
+import 'package:neosoft_training_application/src/ui/login/login.dart';
+import 'package:neosoft_training_application/src/ui/login/logout.dart';
+import 'package:neosoft_training_application/src/ui/my_account/my_account.dart';
+import 'package:neosoft_training_application/src/ui/my_orders/my_orders.dart';
 import 'package:neosoft_training_application/src/ui/product_listing/my_cart.dart';
 import 'package:neosoft_training_application/src/ui/product_listing/product_listing.dart';
 import 'package:neosoft_training_application/src/widgets/carousel.dart';
@@ -59,9 +63,11 @@ class _HomeScreenState extends State<HomeScreen> {
               image: 'Cupboards',
             ),
             _drawerItems(
-              title: 'My Account',
-              image: 'MyAccount',
-            ),
+                title: 'My Account',
+                image: 'MyAccount',
+                onPressed: () {
+                  Push(context, screen: MyAccount());
+                }),
             _drawerItems(
               title: 'Store Locator',
               image: 'StoreLocator',
@@ -69,14 +75,29 @@ class _HomeScreenState extends State<HomeScreen> {
             _drawerItems(
               title: 'My Orders',
               image: 'MyOrders',
+              onPressed: () {
+                Push(
+                  context,
+                  screen: MyOrders(),
+                );
+              },
             ),
             _drawerItems(
               title: 'Logout',
               image: 'Logout',
+              onPressed: _logout,
             ),
           ],
         ),
       ),
+    );
+  }
+
+  void _logout() {
+    LogOut.logout();
+    PushAndRemoveUntil(
+      context,
+      screen: LoginScreen(),
     );
   }
 

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:neosoft_training_application/src/blocs/radio_buttons_bloc.dart';
+import 'package:neosoft_training_application/src/blocs_api/register_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
+import 'package:neosoft_training_application/src/models/user_model.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
-import 'package:neosoft_training_application/src/ui/homescreen/homescreen.dart';
+import 'package:neosoft_training_application/src/validation/registration_validation.dart';
 import 'package:neosoft_training_application/src/widgets/background_gradient.dart';
 import 'package:neosoft_training_application/src/widgets/login_register_button.dart';
 import 'package:neosoft_training_application/src/widgets/textfield_border_decoration.dart';
@@ -16,11 +18,29 @@ class Registration extends StatefulWidget {
 }
 
 class _RegistrationState extends State<Registration> {
+  final _formKey = GlobalKey<FormState>();
+
   late final RadioButtonsBloc _radioBloc;
+  late final RegisterBLOC _registerBLOC;
+
+  late final TextEditingController _firstNameCntrl;
+  late final TextEditingController _lastNameCntrl;
+  late final TextEditingController _emailCntrl;
+  late final TextEditingController _passwordCntrl;
+  late final TextEditingController _confirmPassCntrl;
+  late final TextEditingController _phoneNoCntrl;
 
   @override
   void initState() {
     _radioBloc = new RadioButtonsBloc();
+    _registerBLOC = new RegisterBLOC(context);
+
+    _firstNameCntrl = new TextEditingController();
+    _lastNameCntrl = new TextEditingController();
+    _emailCntrl = new TextEditingController();
+    _passwordCntrl = new TextEditingController();
+    _confirmPassCntrl = new TextEditingController();
+    _phoneNoCntrl = new TextEditingController();
 
     super.initState();
   }
@@ -28,6 +48,7 @@ class _RegistrationState extends State<Registration> {
   @override
   void dispose() {
     _radioBloc.dispose();
+
     super.dispose();
   }
 
@@ -37,38 +58,67 @@ class _RegistrationState extends State<Registration> {
       appBar: _appbar(),
       body: Container(
         decoration: _boxDecoration(),
-        child: ListView(
-          padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
-          children: [
-            Column(
-              children: [
-                SizedBox(height: 5.h),
-                _title(),
-                SizedBox(height: 3.h),
-                _firstNameTextField(),
-                SizedBox(height: 2.h),
-                _lastNameTextField(),
-                SizedBox(height: 2.h),
-                _emailTextField(),
-                SizedBox(height: 2.h),
-                _passwordTextField(),
-                SizedBox(height: 2.h),
-                _confirmPasswordTextField(),
-                _gender(),
-                _phoneNumberTextField(),
-                _termsAndConditions(),
-                LoginRegisterButton(
-                  title: 'REGISTER',
-                  onPressed: () {
-                    Push(context, screen: HomeScreen());
-                  },
-                ),
-              ],
-            ),
-          ],
+        child: Form(
+          key: _formKey,
+          autovalidateMode: AutovalidateMode.onUserInteraction,
+          child: ListView(
+            padding: EdgeInsets.symmetric(horizontal: 12.w, vertical: 2.h),
+            children: [
+              Column(
+                children: [
+                  SizedBox(height: 5.h),
+                  _title(),
+                  SizedBox(height: 3.h),
+                  _firstNameTextField(),
+                  SizedBox(height: 2.h),
+                  _lastNameTextField(),
+                  SizedBox(height: 2.h),
+                  _emailTextField(),
+                  SizedBox(height: 2.h),
+                  _passwordTextField(),
+                  SizedBox(height: 2.h),
+                  _confirmPasswordTextField(),
+                  _gender(),
+                  _phoneNumberTextField(),
+                  _termsAndConditions(),
+                  _registerButton(),
+                ],
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  StreamBuilder<bool> _registerButton() {
+    return StreamBuilder<bool>(
+      stream: _registerBLOC.circularProgressIntance.stream,
+      initialData: false,
+      builder: (context, snapshot) {
+        var isLoading = snapshot.data!;
+        return LoginRegisterButton(
+          title: 'REGISTER',
+          onPressed: _register,
+          isLoading: isLoading,
+        );
+      },
+    );
+  }
+
+  _register() async {
+    if (_formKey.currentState!.validate() && _radioBloc.iAgree) {
+      var model = new RegisterModel(
+        firstName: _firstNameCntrl.text.trim(),
+        lastName: _lastNameCntrl.text.trim(),
+        email: _emailCntrl.text.trim(),
+        password: _passwordCntrl.text.trim(),
+        confirmPassword: _confirmPassCntrl.text.trim(),
+        gender: _radioBloc.value,
+        phoneNo: _phoneNoCntrl.text.trim(),
+      );
+      _registerBLOC.register(model);
+    }
   }
 
   _termsAndConditions() {
@@ -203,6 +253,8 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _firstNameTextField() {
     return TextFormField(
+      controller: _firstNameCntrl,
+      validator: (val) => ValidationRegister.firstName(val!),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -214,6 +266,8 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _lastNameTextField() {
     return TextFormField(
+      controller: _lastNameCntrl,
+      validator: (val) => ValidationRegister.lastName(val!),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -225,6 +279,8 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _emailTextField() {
     return TextFormField(
+      controller: _emailCntrl,
+      validator: (val) => ValidationRegister.email(val!),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -236,6 +292,8 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _passwordTextField() {
     return TextFormField(
+      controller: _passwordCntrl,
+      validator: (val) => ValidationRegister.password(val!),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -247,6 +305,11 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _confirmPasswordTextField() {
     return TextFormField(
+      controller: _confirmPassCntrl,
+      validator: (val) => ValidationRegister.conPassword(
+        val!,
+        _passwordCntrl.text.trim(),
+      ),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -258,6 +321,8 @@ class _RegistrationState extends State<Registration> {
 
   TextFormField _phoneNumberTextField() {
     return TextFormField(
+      controller: _phoneNoCntrl,
+      validator: (val) => ValidationRegister.phoneNumber(val!),
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(

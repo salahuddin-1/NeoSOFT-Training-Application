@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:sizer/sizer.dart';
 
+import 'circular_progress.dart';
+
 class LoginRegisterButton extends StatelessWidget {
   final Function? onPressed;
   final String title;
@@ -26,14 +28,16 @@ class LoginRegisterButton extends StatelessWidget {
       height: 7.h,
       minWidth: double.infinity,
       color: White,
-      child: Text(
-        title,
-        style: TextStyle(
-          color: Red,
-          fontWeight: FontWeight.w700,
-          fontSize: 19.sp,
-        ),
-      ),
+      child: isLoading
+          ? CircularProgressCustom()
+          : Text(
+              title,
+              style: TextStyle(
+                color: Red,
+                fontWeight: FontWeight.w700,
+                fontSize: 19.sp,
+              ),
+            ),
     );
   }
 }

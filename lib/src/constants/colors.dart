@@ -12,3 +12,5 @@ const Grey = const Color(0xff212121);
 const LightGrey = const Color(0xff7f7f7f);
 
 const Golden = const Color(0xffffba00);
+
+const Black = const Color(0xff000000);

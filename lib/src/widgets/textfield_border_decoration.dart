@@ -26,5 +26,18 @@ InputDecoration borderDecoration({
       color: White,
       fontWeight: FontWeight.w600,
     ),
+    errorBorder: OutlineInputBorder(
+      borderSide: BorderSide(
+        color: Black,
+      ),
+    ),
+    errorStyle: TextStyle(
+      color: Black,
+    ),
+    focusedErrorBorder: OutlineInputBorder(
+      borderSide: BorderSide(
+        color: Black,
+      ),
+    ),
   );
 }
