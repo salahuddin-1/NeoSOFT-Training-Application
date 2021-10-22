@@ -1,16 +1,26 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:neosoft_training_application/src/blocs_api/add_to_cart_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api/get_product_details_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
-import 'package:neosoft_training_application/src/models/tables_model.dart';
+import 'package:neosoft_training_application/src/models/add_to_cart_model.dart';
+import 'package:neosoft_training_application/src/models/product_details_response_model.dart';
+import 'package:neosoft_training_application/src/resources/add_to_cart_repo.dart';
+import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
+import 'package:neosoft_training_application/src/ui/product_listing/ratings_pop_up.dart';
+import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
+import 'package:neosoft_training_application/src/widgets/error_widget.dart';
 import 'package:sizer/sizer.dart';
 
 class ProductDetail extends StatefulWidget {
-  final TableModel? tableModel;
+  final String productId;
+  final String type;
 
   const ProductDetail({
     Key? key,
-    required this.tableModel,
+    required this.productId,
+    required this.type,
   }) : super(key: key);
 
   @override
@@ -18,18 +28,107 @@ class ProductDetail extends StatefulWidget {
 }
 
 class _ProductDetailState extends State<ProductDetail> {
-  bool _isOutOfStock = true;
+  bool _isOutOfStock = false;
+  late GetProductDetailsBLOC _getProductDetailsBLOC;
+  late AddToCartBLOC _addToCartBLOC;
+  late AddtoCartModel addtoCartModel;
+
+  ProductDetailsResponseModel? tableModel;
+  RatingsPopUp? _ratingsPopUp;
+
+  @override
+  void initState() {
+    _getProductDetailsBLOC = GetProductDetailsBLOC(
+      widget.productId,
+    );
+
+    addtoCartModel = AddtoCartModel(
+      productId: widget.productId,
+      quantity: '1',
+    );
+
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    _addToCartBLOC = AddToCartBLOC(context);
+
+    super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    _getProductDetailsBLOC.dispose();
+    _ratingsPopUp!.setRatingBLOC.dispose();
+    _ratingsPopUp!.setRatingsStarBLOC.dispose();
+    _addToCartBLOC.dispose();
+
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: appbar(
-        context,
-        title: widget.tableModel!.tableName,
+    return RefreshIndicator(
+      onRefresh: () => _getProductDetailsBLOC.getDetails(),
+      color: Red,
+      child: StreamBuilder<ApiResponse<ProductDetailsResponseModel>>(
+        stream: _getProductDetailsBLOC.stream,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            switch (snapshot.data!.status) {
+              case Status.LOADING:
+                return Container(
+                  alignment: Alignment.center,
+                  color: White,
+                  child: CircularProgressCustom(),
+                );
+
+              case Status.ERROR:
+                return Scaffold(
+                  body: ErrorWidgetCustom(
+                    message: snapshot.data!.message!,
+                    onPressed: () => _getProductDetailsBLOC.getDetails(),
+                  ),
+                );
+
+              case Status.COMPLETED:
+                tableModel = snapshot.data!.data!;
+
+                String productId =
+                    tableModel!.data!.productImages![0].productId!.toString();
+
+                if (_ratingsPopUp == null) {
+                  _ratingsPopUp = RatingsPopUp(
+                    productId: productId,
+                    productDetailsResponseModel: tableModel!,
+                    context: context,
+                  );
+                }
+
+                return Scaffold(
+                  appBar: appbar(
+                    context,
+                    title: tableModel!.data!.name!,
+                  ),
+                  body: _body(),
+                  bottomSheet: _bottomSheet(),
+                  backgroundColor: Colors.grey[200],
+                );
+
+              default:
+            }
+          }
+
+          return Container(
+            height: 100.h,
+            width: 100.w,
+            alignment: Alignment.center,
+            color: White,
+            child: CircularProgressCustom(),
+          );
+        },
       ),
-      body: _body(),
-      bottomSheet: _bottomSheet(),
-      backgroundColor: Colors.grey[200],
     );
   }
 
@@ -39,18 +138,32 @@ class _ProductDetailState extends State<ProductDetail> {
       height: 11.h,
       child: Row(
         children: [
-          _button(
-            title: 'BUY NOW',
-            textColor: White,
-            buttonColor: Red,
-            onPressed: () {},
+          StreamBuilder<bool>(
+            stream: _addToCartBLOC.loadingInstance.stream,
+            builder: (context, snapshot) {
+              bool isLoading = false;
+
+              if (snapshot.hasData) {
+                isLoading = snapshot.data!;
+              }
+
+              return _button(
+                title: 'BUY NOW',
+                textColor: White,
+                buttonColor: Red,
+                onPressed: () {
+                  _addToCartBLOC.addToCart(addtoCartModel);
+                },
+                isLoading: isLoading,
+              );
+            },
           ),
           SizedBox(width: 3.w),
           _button(
             title: 'RATE',
             textColor: Colors.grey[700]!,
             buttonColor: Colors.grey[300]!,
-            onPressed: () {},
+            onPressed: _ratingsPopUp!.showRatings,
           ),
         ],
       ),
@@ -62,6 +175,7 @@ class _ProductDetailState extends State<ProductDetail> {
     required Color textColor,
     required Color buttonColor,
     required Function onPressed,
+    bool isLoading = false,
   }) {
     return Expanded(
       child: MaterialButton(
@@ -70,22 +184,28 @@ class _ProductDetailState extends State<ProductDetail> {
         ),
         color: buttonColor,
         onPressed: () {
-          onPressed();
+          if (!isLoading) {
+            onPressed();
+          }
         },
         child: Center(
-          child: Text(
-            title,
-            style: TextStyle(
-              fontSize: 14.5.sp,
-              color: textColor,
-            ),
-          ),
+          child: isLoading
+              ? CircularProgressCustom(
+                  color: White,
+                )
+              : Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: 14.5.sp,
+                    color: textColor,
+                  ),
+                ),
         ),
       ),
     );
   }
 
-  _body() {
+  Widget _body() {
     return ListView(
       children: [
         _header(),
@@ -93,13 +213,11 @@ class _ProductDetailState extends State<ProductDetail> {
           margin: EdgeInsets.all(4.w),
           padding: EdgeInsets.only(left: 3.w, right: 2.w),
           height: 100.h,
-          // color: Colors.yellow,
           color: White,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
-                // color: Colors.green,
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -124,7 +242,7 @@ class _ProductDetailState extends State<ProductDetail> {
                 alignment: Alignment.center,
                 height: 44.w,
                 child: CachedNetworkImage(
-                  imageUrl: widget.tableModel!.image,
+                  imageUrl: tableModel!.data!.productImages![0].image!,
                   width: 63.w,
                   fit: BoxFit.fill,
                 ),
@@ -142,7 +260,7 @@ class _ProductDetailState extends State<ProductDetail> {
                           image: DecorationImage(
                             fit: BoxFit.fill,
                             image: CachedNetworkImageProvider(
-                              widget.tableModel!.image,
+                              tableModel!.data!.productImages![0].image!,
                             ),
                           ),
                         ),
@@ -152,7 +270,7 @@ class _ProductDetailState extends State<ProductDetail> {
                     Expanded(
                       child: Container(
                         child: CachedNetworkImage(
-                          imageUrl: widget.tableModel!.image,
+                          imageUrl: tableModel!.data!.productImages![0].image!,
                           fit: BoxFit.cover,
                         ),
                         decoration: BoxDecoration(
@@ -168,7 +286,7 @@ class _ProductDetailState extends State<ProductDetail> {
                           image: DecorationImage(
                             fit: BoxFit.fill,
                             image: CachedNetworkImageProvider(
-                              widget.tableModel!.image,
+                              tableModel!.data!.productImages![0].image!,
                             ),
                           ),
                         ),
@@ -192,11 +310,7 @@ class _ProductDetailState extends State<ProductDetail> {
               ),
               SizedBox(height: 1.h),
               Text(
-                ''' 
-What is Lorem Ipsum Lorem Ipsum is simply dummy text of the printing and typesetting industry Lorem Ipsum has
-been the industry's standard dummy text ever since the 1500s when an unknown printer took a 
-galley of type and scrambled it to make a type specimen book it has?
-''',
+                tableModel!.data!.description!,
                 style: TextStyle(
                   color: LightGrey,
                   fontWeight: FontWeight.w600,
@@ -223,7 +337,7 @@ galley of type and scrambled it to make a type specimen book it has?
 
   Text _price() {
     return Text(
-      "Rs. ${widget.tableModel!.price}",
+      "Rs. ${tableModel!.data!.cost}",
       style: TextStyle(
         color: Red,
         fontSize: 16.sp,
@@ -243,7 +357,7 @@ galley of type and scrambled it to make a type specimen book it has?
         children: [
           FittedBox(
             child: Text(
-              widget.tableModel!.tableName,
+              tableModel!.data!.name!,
               style: TextStyle(
                 fontSize: 15.sp,
                 fontWeight: FontWeight.w600,
@@ -252,7 +366,7 @@ galley of type and scrambled it to make a type specimen book it has?
             ),
           ),
           Text(
-            'Category - Tables',
+            'Category - ${widget.type}',
             style: TextStyle(
               fontSize: 12.sp,
               fontWeight: FontWeight.w600,
@@ -263,7 +377,7 @@ galley of type and scrambled it to make a type specimen book it has?
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                widget.tableModel!.shopName,
+                tableModel!.data!.producer!,
                 style: TextStyle(
                   fontSize: 7.5.sp,
                   fontWeight: FontWeight.w600,
@@ -278,16 +392,21 @@ galley of type and scrambled it to make a type specimen book it has?
     );
   }
 
-  Row _ratings() {
-    return Row(
-      children: [
-        for (int i = 0; i < 5; i++)
-          Icon(
-            Icons.star,
-            color: i < widget.tableModel!.ratings ? Golden : LightGrey,
-            size: 12.sp,
-          ),
-      ],
+  Widget _ratings() {
+    return Material(
+      child: InkWell(
+        onTap: () {},
+        child: Row(
+          children: [
+            for (int i = 1; i <= 5; i++)
+              Icon(
+                Icons.star,
+                color: i <= tableModel!.data!.rating! ? Golden : LightGrey,
+                size: 12.sp,
+              ),
+          ],
+        ),
+      ),
     );
   }
 }

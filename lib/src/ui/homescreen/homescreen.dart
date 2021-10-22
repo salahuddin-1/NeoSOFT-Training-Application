@@ -1,6 +1,9 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
+import 'package:neosoft_training_application/src/resources/get_products_list_repo.dart';
 import 'package:neosoft_training_application/src/ui/login/login.dart';
 import 'package:neosoft_training_application/src/ui/login/logout.dart';
 import 'package:neosoft_training_application/src/ui/my_account/my_account.dart';
@@ -38,12 +41,19 @@ class _HomeScreenState extends State<HomeScreen> {
             _drawerHeader(),
             SizedBox(height: 3.h),
             _drawerItems(
-                title: 'My Cart',
-                image: 'MyCart',
-                trailing: _cartIemCount(),
-                onPressed: () {
-                  Push(context, screen: MyCart());
-                }),
+              title: 'My Cart',
+              image: 'MyCart',
+              trailing: _cartIemCount(),
+              onPressed: () {
+                Push(
+                  context,
+                  screen: BlocProvider(
+                    create: (context) => GetListCartItemsBLOC(),
+                    child: MyCart(),
+                  ),
+                );
+              },
+            ),
             _drawerItems(
                 title: 'Tables',
                 image: 'Tables',
@@ -51,17 +61,23 @@ class _HomeScreenState extends State<HomeScreen> {
                   Push(context, screen: ProductListing(title: 'Tables'));
                 }),
             _drawerItems(
-              title: 'Sofas',
-              image: 'Sofas',
-            ),
+                title: 'Sofas',
+                image: 'Sofas',
+                onPressed: () {
+                  Push(context, screen: ProductListing(title: 'Sofas'));
+                }),
             _drawerItems(
-              title: 'Chairs',
-              image: 'Chairs',
-            ),
+                title: 'Chairs',
+                image: 'Chairs',
+                onPressed: () {
+                  Push(context, screen: ProductListing(title: 'Chairs'));
+                }),
             _drawerItems(
-              title: 'Cupboards',
-              image: 'Cupboards',
-            ),
+                title: 'Cupboards',
+                image: 'Cupboards',
+                onPressed: () {
+                  Push(context, screen: ProductListing(title: 'Cupboards'));
+                }),
             _drawerItems(
                 title: 'My Account',
                 image: 'MyAccount',
@@ -312,31 +328,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   left: 2.w,
                   right: 4.w,
                   bottom: 2.w,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: Container(
-                          margin: EdgeInsets.only(top: 20, right: 20),
-                          alignment: Alignment.topRight,
-                          child: Image.network(
-                            iconImages['Sofas']!,
-                            color: White,
-                          ),
+                  child: Material(
+                    color: Red,
+                    child: InkWell(
+                      onTap: () {
+                        Push(context, screen: ProductListing(title: 'Sofas'));
+                      },
+                      child: Ink(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              flex: 4,
+                              child: Container(
+                                margin: EdgeInsets.only(top: 20, right: 20),
+                                alignment: Alignment.topRight,
+                                child: Image.network(
+                                  iconImages['Sofas']!,
+                                  color: White,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 20, left: 20),
+                                alignment: Alignment.bottomLeft,
+                                child: Text(
+                                  "Sofas",
+                                  textScaleFactor: 1.6,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 20, left: 20),
-                          alignment: Alignment.bottomLeft,
-                          child: Text(
-                            "Sofas",
-                            textScaleFactor: 1.6,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],
@@ -350,31 +376,41 @@ class _HomeScreenState extends State<HomeScreen> {
                   left: 4.w,
                   right: 2.w,
                   bottom: 4.w,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          margin: EdgeInsets.only(top: 20, left: 20),
-                          alignment: Alignment.topLeft,
-                          child: Text(
-                            "Chair",
-                            textScaleFactor: 1.6,
-                          ),
+                  child: Material(
+                    color: Red,
+                    child: InkWell(
+                      onTap: () {
+                        Push(context, screen: ProductListing(title: 'Chairs'));
+                      },
+                      child: Ink(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                margin: EdgeInsets.only(top: 20, left: 20),
+                                alignment: Alignment.topLeft,
+                                child: Text(
+                                  "Chair",
+                                  textScaleFactor: 1.6,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 4,
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 20, right: 20),
+                                alignment: Alignment.bottomRight,
+                                child: Image.network(
+                                  iconImages['Chairs']!,
+                                  color: White,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        flex: 4,
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 20, right: 20),
-                          alignment: Alignment.bottomRight,
-                          child: Image.network(
-                            iconImages['Chairs']!,
-                            color: White,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
                 _Category(
@@ -382,31 +418,42 @@ class _HomeScreenState extends State<HomeScreen> {
                   left: 2.w,
                   right: 4.w,
                   bottom: 4.w,
-                  child: Column(
-                    children: [
-                      Expanded(
-                        flex: 4,
-                        child: Container(
-                          margin: EdgeInsets.only(top: 20, left: 20),
-                          alignment: Alignment.topLeft,
-                          child: Image.network(
-                            iconImages['Cupboards']!,
-                            color: White,
-                          ),
+                  child: Material(
+                    color: Red,
+                    child: InkWell(
+                      onTap: () {
+                        Push(context,
+                            screen: ProductListing(title: 'Cupboards'));
+                      },
+                      child: Ink(
+                        child: Column(
+                          children: [
+                            Expanded(
+                              flex: 4,
+                              child: Container(
+                                margin: EdgeInsets.only(top: 20, left: 20),
+                                alignment: Alignment.topLeft,
+                                child: Image.network(
+                                  iconImages['Cupboards']!,
+                                  color: White,
+                                ),
+                              ),
+                            ),
+                            Expanded(
+                              flex: 3,
+                              child: Container(
+                                margin: EdgeInsets.only(bottom: 20, right: 20),
+                                alignment: Alignment.bottomRight,
+                                child: Text(
+                                  "Cupboards",
+                                  textScaleFactor: 1.6,
+                                ),
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      Expanded(
-                        flex: 3,
-                        child: Container(
-                          margin: EdgeInsets.only(bottom: 20, right: 20),
-                          alignment: Alignment.bottomRight,
-                          child: Text(
-                            "Cupboards",
-                            textScaleFactor: 1.6,
-                          ),
-                        ),
-                      ),
-                    ],
+                    ),
                   ),
                 ),
               ],

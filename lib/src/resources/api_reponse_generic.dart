@@ -3,6 +3,8 @@ class ApiResponse<T> {
   T? data;
   String? message;
 
+  ApiResponse.empty() : status = Status.EMPTY;
+
   ApiResponse.loading(this.message) : status = Status.LOADING;
 
   ApiResponse.completed(this.data) : status = Status.COMPLETED;
@@ -15,4 +17,4 @@ class ApiResponse<T> {
   }
 }
 
-enum Status { LOADING, COMPLETED, ERROR }
+enum Status { LOADING, COMPLETED, ERROR, EMPTY }

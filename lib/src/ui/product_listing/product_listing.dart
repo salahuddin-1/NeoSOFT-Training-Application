@@ -1,10 +1,14 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:neosoft_training_application/src/blocs_api/get_product_list_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
-import 'package:neosoft_training_application/src/constants/images.dart';
-import 'package:neosoft_training_application/src/models/tables_model.dart';
+import 'package:neosoft_training_application/src/models/product_list_response_model.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
+import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
+import 'package:neosoft_training_application/src/resources/get_product_details_repo.dart';
+import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
+import 'package:neosoft_training_application/src/widgets/error_widget.dart';
 import 'package:sizer/sizer.dart';
 
 import 'product_detail.dart';
@@ -22,46 +26,95 @@ class ProductListing extends StatefulWidget {
 }
 
 class _ProductListingState extends State<ProductListing> {
+  late final GetProductListBLOC _getProductListBLOC;
+  List<Data>? tableModel;
+
+  @override
+  void initState() {
+    _getProductListBLOC = GetProductListBLOC(widget.title);
+    super.initState();
+  }
+
+  @override
+  void dispose() {
+    _getProductListBLOC.dispose();
+    super.dispose();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: appbar(context, title: 'Tables'),
-      body: ListView.builder(
-        itemCount: tableModel.length,
-        itemBuilder: (context, index) {
-          return InkWell(
-            onTap: () {
-              Push(
-                context,
-                screen: ProductDetail(
-                  tableModel: tableModel[index],
-                ),
-              );
-            },
-            child: Column(
-              children: [
-                Container(
-                  margin: EdgeInsets.symmetric(vertical: 0.7.h),
-                  height: 18.h,
-                  child: Container(
-                    margin: EdgeInsets.symmetric(
-                      vertical: 2.1.h,
-                      horizontal: 1.3.w,
-                    ),
-                    child: Row(
-                      children: [
-                        _image(index),
-                        _information(index),
-                      ],
-                    ),
+      appBar: appbar(context, title: widget.title),
+      body: RefreshIndicator(
+        onRefresh: () => _getProductListBLOC.getProducts(),
+        color: Red,
+        child: StreamBuilder<ApiResponse<ProductListResponseModel>>(
+          stream: _getProductListBLOC.stream,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              switch (snapshot.data!.status!) {
+                case Status.LOADING:
+                  return Center(child: CircularProgressCustom());
+
+                case Status.COMPLETED:
+                  return _screen(snapshot);
+
+                case Status.ERROR:
+                  return ErrorWidgetCustom(
+                    message: snapshot.data!.message!,
+                    onPressed: () => _getProductListBLOC.getProducts(),
+                  );
+                default:
+              }
+            }
+
+            return Center(child: CircularProgressCustom());
+          },
+        ),
+      ),
+    );
+  }
+
+  ListView _screen(
+    AsyncSnapshot<ApiResponse<ProductListResponseModel>> snapshot,
+  ) {
+    return ListView.builder(
+      itemCount: snapshot.data!.data!.data!.length,
+      itemBuilder: (context, index) {
+        tableModel = snapshot.data!.data!.data!;
+
+        return InkWell(
+          onTap: () {
+            Push(
+              context,
+              screen: ProductDetail(
+                  productId: tableModel![index].id.toString(),
+                  type: widget.title),
+            );
+          },
+          child: Column(
+            children: [
+              Container(
+                margin: EdgeInsets.symmetric(vertical: 0.7.h),
+                height: 18.h,
+                child: Container(
+                  margin: EdgeInsets.symmetric(
+                    vertical: 2.1.h,
+                    horizontal: 1.3.w,
+                  ),
+                  child: Row(
+                    children: [
+                      _image(index),
+                      _information(index),
+                    ],
                   ),
                 ),
-                _divider(),
-              ],
-            ),
-          );
-        },
-      ),
+              ),
+              _divider(),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -109,7 +162,7 @@ class _ProductListingState extends State<ProductListing> {
         for (int i = 0; i < 5; i++)
           Icon(
             Icons.star,
-            color: i < tableModel[index].ratings ? Golden : LightGrey,
+            color: i < tableModel![index].rating! ? Golden : LightGrey,
             size: 12.sp,
           ),
       ],
@@ -118,7 +171,7 @@ class _ProductListingState extends State<ProductListing> {
 
   Text _price(int index) {
     return Text(
-      "Rs. ${tableModel[index].price}",
+      "Rs. ${tableModel![index].cost}",
       style: TextStyle(
         color: Red,
         fontSize: 16.sp,
@@ -129,7 +182,7 @@ class _ProductListingState extends State<ProductListing> {
 
   Text _shopname(int index) {
     return Text(
-      tableModel[index].shopName,
+      tableModel![index].producer!,
       style: TextStyle(
         color: Colors.grey[700],
         fontSize: 8.sp,
@@ -139,7 +192,7 @@ class _ProductListingState extends State<ProductListing> {
 
   Text _title(int index) {
     return Text(
-      tableModel[index].tableName,
+      tableModel![index].name!,
       style: TextStyle(
         color: Grey,
         fontSize: 11.sp,
@@ -158,7 +211,7 @@ class _ProductListingState extends State<ProductListing> {
           image: DecorationImage(
             fit: BoxFit.cover,
             image: CachedNetworkImageProvider(
-              tableImages[index],
+              tableModel![index].productImages!,
             ),
           ),
         ),

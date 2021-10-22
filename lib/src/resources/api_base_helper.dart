@@ -8,6 +8,8 @@ class ApiBaseHelper {
 
   final List<int> _responseStatus = [200, 400, 404, 402, 401, 500];
 
+// -------------------- POST ---------------------------------------------
+
   post(
     String url, {
     required Object body,
@@ -30,6 +32,30 @@ class ApiBaseHelper {
     return responseJson;
   }
 
+// ------------------- GET ---------------------------------
+
+  get(
+    String url, {
+    Map<String, String>? headers,
+  }) async {
+    var responseJson;
+
+    try {
+      final response = await http.get(
+        Uri.parse(_baseUrl + url),
+        headers: headers,
+      );
+
+      responseJson = _returnResponse(response);
+    } on SocketException {
+      throw FetchDataException("No Internet connection");
+    }
+
+    return responseJson;
+  }
+
+// ----------------- RETURNED REPONSE ------------------------
+
   dynamic _returnResponse(http.Response response) {
     final status = response.statusCode;
 
@@ -37,8 +63,6 @@ class ApiBaseHelper {
 
     if (_responseStatus.contains(status)) {
       var reponseJson = jsonDecode(response.body);
-      print(reponseJson);
-
       return reponseJson;
     }
 
@@ -54,4 +78,7 @@ class ApiBaseHelper {
         );
     }
   }
+
+// ------------------------------------------------------------------------------
+
 }

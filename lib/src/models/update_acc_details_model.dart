@@ -1,43 +1,51 @@
-// Model for Loggin in
+class UpdateAccountDetailsModel {
+  String? firstName;
+  String? lastName;
+  String? email;
+  String? dob;
+  String? phoneNumber;
+  String? profilePic;
 
-class LoginModel {
-  String email;
-  String password;
-
-  LoginModel({
-    required this.email,
-    required this.password,
+  UpdateAccountDetailsModel({
+    this.firstName,
+    this.lastName,
+    this.email,
+    this.dob,
+    this.phoneNumber,
+    this.profilePic,
   });
-
-  Map<String, dynamic> toJson() {
-    final Map<String, dynamic> data = new Map<String, dynamic>();
-    data['email'] = this.email;
-    data['password'] = this.password;
-    return data;
-  }
 }
 
-// Response Model
-
-class LoginResponseModel {
+class UpdateAccountDetailsResponseModel {
   int? status;
   Data? data;
   String? message;
   String? userMsg;
 
-  LoginResponseModel({this.status, this.data, this.message, this.userMsg});
+  UpdateAccountDetailsResponseModel({
+    this.status,
+    this.data,
+    this.message,
+    this.userMsg,
+  });
 
-  LoginResponseModel.fromJson(Map<String, dynamic> json) {
-    status = json['status'];
-    message = json['message'];
-    userMsg = json['user_msg'];
+  factory UpdateAccountDetailsResponseModel.fromJson(
+    Map<String, dynamic> json,
+  ) {
+    Data? data;
 
     if (json['data'] != null && json['data'].runtimeType != bool) {
       data = Data.fromJson(json['data']);
     }
+    return UpdateAccountDetailsResponseModel(
+      status: json['status'],
+      message: json['message'],
+      userMsg: json['user_msg'],
+      data: data,
+    );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['status'] = this.status;
 
@@ -46,8 +54,6 @@ class LoginResponseModel {
     return data;
   }
 }
-
-// Response Nested Model
 
 class Data {
   int? id;
@@ -84,25 +90,27 @@ class Data {
     this.accessToken,
   });
 
-  Data.fromJson(Map<String, dynamic> json) {
-    id = json['id'];
-    roleId = json['role_id'];
-    firstName = json['first_name'];
-    lastName = json['last_name'];
-    email = json['email'];
-    username = json['username'];
-    profilePic = json['profile_pic'];
-    countryId = json['country_id'];
-    gender = json['gender'];
-    phoneNo = json['phone_no'];
-    dob = json['dob'];
-    isActive = json['is_active'];
-    created = json['created'];
-    modified = json['modified'];
-    accessToken = json['access_token'];
+  factory Data.fromJson(Map<String, dynamic> json) {
+    return Data(
+      id: json['id'],
+      roleId: json['role_id'],
+      firstName: json['first_name'],
+      lastName: json['last_name'],
+      email: json['email'],
+      username: json['username'],
+      profilePic: json['profile_pic'],
+      countryId: json['country_id'],
+      gender: json['gender'],
+      phoneNo: json['phone_no'],
+      dob: json['dob'],
+      isActive: json['is_active'],
+      created: json['created'],
+      modified: json['modified'],
+      accessToken: json['access_token'],
+    );
   }
 
-  Map<String, dynamic> toJson() {
+  Map<String, dynamic> toMap() {
     final Map<String, dynamic> data = new Map<String, dynamic>();
     data['id'] = this.id;
     data['role_id'] = this.roleId;

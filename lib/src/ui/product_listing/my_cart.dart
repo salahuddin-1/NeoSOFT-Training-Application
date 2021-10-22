@@ -1,12 +1,22 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:neosoft_training_application/src/blocs/my_cart_quantity_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api/edit_cart_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/constants/quantity_list.dart';
+import 'package:neosoft_training_application/src/models/edit_cart_model.dart';
+import 'package:neosoft_training_application/src/models/get_list_cart_items_model.dart';
 import 'package:neosoft_training_application/src/models/my_cart_model.dart';
-import 'package:neosoft_training_application/src/navigation/navigation.dart';
+import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
+import 'package:neosoft_training_application/src/resources/get_list_cart_items_repo.dart';
 import 'package:neosoft_training_application/src/resources/my_cart.dart';
+import 'package:neosoft_training_application/src/validation/quantity_validation.dart';
+import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
+import 'package:neosoft_training_application/src/widgets/error_widget.dart';
+import 'package:neosoft_training_application/src/widgets/toast.dart';
 import 'package:sizer/sizer.dart';
 
 class MyCart extends StatefulWidget {
@@ -19,13 +29,23 @@ class MyCart extends StatefulWidget {
 class _MyCartState extends State<MyCart> {
   late MyCartResources _myCartResources;
   late List<MyCartModel> items;
+  late GetListCartItemsBLOC _getListCartItemsBLOC;
 
   @override
   void initState() {
     _myCartResources = new MyCartResources();
     items = _myCartResources.items;
 
+    GetListCartItemsRepo().getListCartItems();
+
     super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    _getListCartItemsBLOC = BlocProvider.of<GetListCartItemsBLOC>(context);
+    _getListCartItemsBLOC.add(Status.LOADING);
+    super.didChangeDependencies();
   }
 
   @override
@@ -51,31 +71,42 @@ class _MyCartState extends State<MyCart> {
   }
 
   _listItem(int index) {
-    return Dismissible(
-      key: ValueKey('$index'),
-      direction: DismissDirection.endToStart,
-      background: _dissmissibleBackground(),
-      child: Column(
-        children: [
-          Container(
-            height: 16.h,
-            child: Container(
-              margin: EdgeInsets.symmetric(
-                vertical: 2.1.h,
-                horizontal: 1.3.w,
-              ),
-              child: Row(
-                children: [
-                  _image(index),
-                  _information(index),
-                ],
-              ),
-            ),
-          ),
-          _divider(),
-        ],
-      ),
+    BlocBuilder<GetListCartItemsBLOC, ApiResponse<GetListCartItemsResponse>>(
+      builder: (context, response) {
+        if (response.status == Status.ERROR) {
+          return ErrorWidgetCustom(message: response.data!.userMsg!);
+        } else if (response.status == Status.COMPLETED) {
+          return Text("Completed");
+          // return Dismissible(
+          //   key: ValueKey('$index'),
+          //   direction: DismissDirection.endToStart,
+          //   background: _dissmissibleBackground(),
+          //   child: Column(
+          //     children: [
+          //       Container(
+          //         height: 16.h,
+          //         child: Container(
+          //           margin: EdgeInsets.symmetric(
+          //             vertical: 2.1.h,
+          //             horizontal: 1.3.w,
+          //           ),
+          //           child: Row(
+          //             children: [
+          //               _image(index),
+          //               _information(index),
+          //             ],
+          //           ),
+          //         ),
+          //       ),
+          //       _divider(),
+          //     ],
+          //   ),
+          // );
+        }
+        return CircularProgressCustom();
+      },
     );
+    ;
   }
 
   _total() {
@@ -324,8 +355,8 @@ class __QuantityState extends State<_Quantity> {
   }
 }
 
-class _QuantityDialogUI extends StatelessWidget {
-  const _QuantityDialogUI({
+class _QuantityDialogUI extends StatefulWidget {
+  _QuantityDialogUI({
     Key? key,
     required this.items,
     required this.index,
@@ -334,8 +365,38 @@ class _QuantityDialogUI extends StatelessWidget {
 
   final List<MyCartModel> items;
   final int index;
-  final double height = 2;
   final MyCartQtyBLOC myCartQtyBLOC;
+
+  @override
+  __QuantityDialogUIState createState() => __QuantityDialogUIState();
+}
+
+class __QuantityDialogUIState extends State<_QuantityDialogUI> {
+  final double height = 2;
+
+  late final TextEditingController _editingController;
+  late EditCartBLOC _editCartBLOC;
+
+  @override
+  void initState() {
+    _editingController = TextEditingController(
+      text: widget.myCartQtyBLOC.value.toString(),
+    );
+    super.initState();
+  }
+
+  @override
+  void didChangeDependencies() {
+    _editCartBLOC = EditCartBLOC(context);
+    super.didChangeDependencies();
+  }
+
+  @override
+  void dispose() {
+    _editingController.dispose();
+    _editCartBLOC.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -349,98 +410,156 @@ class _QuantityDialogUI extends StatelessWidget {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.spaceAround,
               children: [
-                Text(
-                  items[index].productName!,
-                  style: TextStyle(
-                    color: Black,
-                    fontSize: 18.sp,
-                  ),
-                ),
+                _title(),
                 SizedBox(height: height.h),
-                Container(
-                  height: 35.h,
-                  width: 80.w,
-                  decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: CachedNetworkImageProvider(
-                        items[index].productImage!,
-                      ),
-                    ),
-                  ),
-                ),
+                _image(),
                 SizedBox(height: height.h),
-                Text(
-                  'Enter Qty',
-                  style: TextStyle(
-                    color: Black,
-                    fontSize: 13.sp,
-                  ),
-                ),
+                _subtitle(),
                 SizedBox(height: height.h),
-                Container(
-                  width: 25.w,
-                  child: TextFormField(
-                    initialValue: '1',
-                    cursorColor: Black,
-                    decoration: InputDecoration(
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(),
-                        borderSide: BorderSide(
-                          color: Colors.green,
-                          width: 2,
-                        ),
-                      ),
-                      filled: true,
-                      fillColor: White,
-                      isDense: true,
-                      focusColor: Colors.green,
-                      focusedBorder: OutlineInputBorder(
-                        borderRadius: BorderRadius.only(),
-                        borderSide: BorderSide(
-                          color: Colors.green,
-                          width: 2,
-                        ),
-                      ),
-                    ),
-                    style: TextStyle(fontSize: 9.sp),
-                    onChanged: (val) {
-                      int value = int.tryParse(val)!;
-                      myCartQtyBLOC.setValue(value);
-                    },
-                  ),
-                ),
+                _quantityTextField(),
                 SizedBox(height: height.h),
-                Container(
-                  margin: EdgeInsets.symmetric(
-                    vertical: 5,
-                    horizontal: 20.w,
-                  ),
-                  child: MaterialButton(
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(5),
-                    ),
-                    color: Red,
-                    onPressed: () {
-                      Pop(context);
-                    },
-                    child: Center(
-                      heightFactor: 2.5,
-                      child: Text(
-                        'SUBMIT',
-                        style: TextStyle(
-                          fontSize: 14.5.sp,
-                          color: White,
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
+                _submitButton(),
               ],
             ),
           ),
         ),
       ),
     );
+  }
+
+  Container _submitButton() {
+    return Container(
+      margin: EdgeInsets.symmetric(
+        vertical: 5,
+        horizontal: 20.w,
+      ),
+      child: MaterialButton(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(5),
+        ),
+        color: Red,
+        onPressed: _submitQuantity,
+        child: Container(
+          alignment: Alignment.center,
+          height: 7.h,
+          child: StreamBuilder<bool>(
+            stream: _editCartBLOC.loadingInstance.stream,
+            builder: (context, snapshot) {
+              bool isLoading = false;
+
+              if (snapshot.hasData) {
+                isLoading = snapshot.data!;
+              }
+
+              return isLoading
+                  ? CircularProgressCustom(
+                      color: White,
+                    )
+                  : Text(
+                      'SUBMIT',
+                      style: TextStyle(
+                        fontSize: 14.5.sp,
+                        color: White,
+                      ),
+                    );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Container _quantityTextField() {
+    return Container(
+      width: 25.w,
+      child: TextFormField(
+        controller: _editingController,
+        cursorColor: Black,
+        decoration: InputDecoration(
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.only(),
+            borderSide: BorderSide(
+              color: Colors.green,
+              width: 2,
+            ),
+          ),
+          filled: true,
+          fillColor: White,
+          isDense: true,
+          focusColor: Colors.green,
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.only(),
+            borderSide: BorderSide(
+              color: Colors.green,
+              width: 2,
+            ),
+          ),
+        ),
+        style: TextStyle(fontSize: 9.sp),
+        onChanged: (val) {
+          if (val.isNotEmpty) {
+            int value = int.tryParse(val)!;
+            widget.myCartQtyBLOC.setValue(value);
+          }
+        },
+      ),
+    );
+  }
+
+  Text _subtitle() {
+    return Text(
+      'Enter Qty',
+      style: TextStyle(
+        color: Black,
+        fontSize: 13.sp,
+      ),
+    );
+  }
+
+  Text _title() {
+    return Text(
+      widget.items[widget.index].productName!,
+      style: TextStyle(
+        color: Black,
+        fontSize: 18.sp,
+      ),
+    );
+  }
+
+  Container _image() {
+    return Container(
+      height: 35.h,
+      width: 80.w,
+      decoration: BoxDecoration(
+        image: DecorationImage(
+          image: CachedNetworkImageProvider(
+            widget.items[widget.index].productImage!,
+          ),
+        ),
+      ),
+    );
+  }
+
+  void _submitQuantity() {
+    final _quantity = _editingController.text.trim();
+
+    if (!QuantityValidation.isQuantityValidate(
+      _quantity,
+    )) {
+      ShowToast.errorToast(
+        'Quantity should be in between 1 - 8',
+        context,
+        4,
+      );
+      return;
+    }
+
+    final editCartModel = EditCartModel(
+      productId: '3',
+      quantity: _quantity,
+    );
+
+    _editCartBLOC.editCart(editCartModel);
   }
 }
 

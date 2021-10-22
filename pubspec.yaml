@@ -35,6 +35,7 @@ dependencies:
   http: ^0.13.3
   flutter_styled_toast: ^2.0.0
   shared_preferences:
+  flutter_bloc: ^7.3.1
 
 
 dev_dependencies:
