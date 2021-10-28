@@ -15,7 +15,7 @@ class MyApp extends StatelessWidget {
       builder: (context, orientation, deviceType) {
         return MaterialApp(
           debugShowCheckedModeBanner: false,
-          title: 'Flutter Demo',
+          title: 'NeoSTORE',
           theme: _themeData(),
           home: HomePage(),
         );

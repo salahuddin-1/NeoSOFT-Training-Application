@@ -3,21 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:neosoft_training_application/src/blocs/my_cart_quantity_BLOC.dart';
 import 'package:neosoft_training_application/src/blocs_api/edit_cart_BLOC.dart';
-import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/address_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/delete_item_from_cart_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
-import 'package:neosoft_training_application/src/constants/quantity_list.dart';
 import 'package:neosoft_training_application/src/models/edit_cart_model.dart';
 import 'package:neosoft_training_application/src/models/get_list_cart_items_model.dart';
-import 'package:neosoft_training_application/src/models/my_cart_model.dart';
+import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
 import 'package:neosoft_training_application/src/resources/get_list_cart_items_repo.dart';
-import 'package:neosoft_training_application/src/resources/my_cart.dart';
+import 'package:neosoft_training_application/src/ui/product_listing/address_list.dart';
 import 'package:neosoft_training_application/src/validation/quantity_validation.dart';
 import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
 import 'package:neosoft_training_application/src/widgets/error_widget.dart';
 import 'package:neosoft_training_application/src/widgets/toast.dart';
 import 'package:sizer/sizer.dart';
+
+GetListCartItemsResponse? _getListCartItemsResponse;
 
 class MyCart extends StatefulWidget {
   const MyCart({Key? key}) : super(key: key);
@@ -27,24 +30,13 @@ class MyCart extends StatefulWidget {
 }
 
 class _MyCartState extends State<MyCart> {
-  late MyCartResources _myCartResources;
-  late List<MyCartModel> items;
   late GetListCartItemsBLOC _getListCartItemsBLOC;
-
-  @override
-  void initState() {
-    _myCartResources = new MyCartResources();
-    items = _myCartResources.items;
-
-    GetListCartItemsRepo().getListCartItems();
-
-    super.initState();
-  }
 
   @override
   void didChangeDependencies() {
     _getListCartItemsBLOC = BlocProvider.of<GetListCartItemsBLOC>(context);
     _getListCartItemsBLOC.add(Status.LOADING);
+
     super.didChangeDependencies();
   }
 
@@ -60,53 +52,64 @@ class _MyCartState extends State<MyCart> {
   }
 
   _body() {
-    return ListView(
-      children: [
-        for (int i = 0; i < items.length; i++) _listItem(i),
-        _total(),
-        _divider(),
-        _button(),
-      ],
+    return RefreshIndicator(
+      color: Red,
+      onRefresh: _onRefresh,
+      child: BlocBuilder<GetListCartItemsBLOC,
+          ApiResponse<GetListCartItemsResponse>>(
+        builder: (context, response) {
+          if (response.status == Status.ERROR) {
+            return ErrorWidgetCustom(
+              message: response.message!,
+              onPressed: _onRefresh,
+            );
+          } else if (response.status == Status.COMPLETED) {
+            _getListCartItemsResponse = response.data;
+
+            if (_getListCartItemsResponse!.data == null)
+              return const _EmptyText();
+
+            int length = _getListCartItemsResponse!.data!.length;
+
+            return ListView(
+              children: [
+                for (int i = 0; i < length; i++) _listItem(i),
+                _total(),
+                _divider(),
+                _button(),
+              ],
+            );
+          }
+          return Center(
+            child: CircularProgressCustom(
+              color: Red,
+            ),
+          );
+        },
+      ),
+    );
+  }
+
+  Divider _divider() {
+    return Divider(
+      height: 0,
+      color: Colors.grey,
+      thickness: 1,
     );
   }
 
   _listItem(int index) {
-    BlocBuilder<GetListCartItemsBLOC, ApiResponse<GetListCartItemsResponse>>(
-      builder: (context, response) {
-        if (response.status == Status.ERROR) {
-          return ErrorWidgetCustom(message: response.data!.userMsg!);
-        } else if (response.status == Status.COMPLETED) {
-          return Text("Completed");
-          // return Dismissible(
-          //   key: ValueKey('$index'),
-          //   direction: DismissDirection.endToStart,
-          //   background: _dissmissibleBackground(),
-          //   child: Column(
-          //     children: [
-          //       Container(
-          //         height: 16.h,
-          //         child: Container(
-          //           margin: EdgeInsets.symmetric(
-          //             vertical: 2.1.h,
-          //             horizontal: 1.3.w,
-          //           ),
-          //           child: Row(
-          //             children: [
-          //               _image(index),
-          //               _information(index),
-          //             ],
-          //           ),
-          //         ),
-          //       ),
-          //       _divider(),
-          //     ],
-          //   ),
-          // );
-        }
-        return CircularProgressCustom();
-      },
+    final productId =
+        _getListCartItemsResponse!.data![index].productId.toString();
+
+    return BlocProvider(
+      create: (context) => DeleteItemFromCartBLOC(productId),
+      child: _ListItemDismissible(
+        index: index,
+        getListCartItemsResponse: _getListCartItemsResponse,
+        getListCartItemsBLOC: _getListCartItemsBLOC,
+      ),
     );
-    ;
   }
 
   _total() {
@@ -125,7 +128,7 @@ class _MyCartState extends State<MyCart> {
             ),
           ),
           Text(
-            "₹ 180.00",
+            "₹ " + _getListCartItemsResponse!.total!.toString(),
             style: TextStyle(
               color: Colors.black,
               fontWeight: FontWeight.w600,
@@ -145,7 +148,15 @@ class _MyCartState extends State<MyCart> {
           borderRadius: BorderRadius.circular(8),
         ),
         color: Red,
-        onPressed: () {},
+        onPressed: () {
+          Push(
+            context,
+            screen: BlocProvider(
+              create: (context) => AddressBLOC(),
+              child: AddressList(),
+            ),
+          );
+        },
         child: Center(
           heightFactor: 2.5,
           child: Text(
@@ -160,126 +171,43 @@ class _MyCartState extends State<MyCart> {
     );
   }
 
-  Container _dissmissibleBackground() {
-    return Container(
-      alignment: Alignment.centerRight,
-      padding: EdgeInsets.only(right: 5.w),
-      child: Container(
-        height: 10.w,
-        width: 10.w,
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Red,
-        ),
-        child: Icon(Icons.delete, color: White),
+  Future _onRefresh() {
+    return Future.delayed(Duration(milliseconds: 100)).then(
+      (value) {
+        GetListCartItemsRepo().getListCartItems();
+        _getListCartItemsBLOC.add(Status.LOADING);
+      },
+    );
+  }
+}
+
+class _EmptyText extends StatelessWidget {
+  const _EmptyText({
+    Key? key,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        "Cart is Empty",
+        style: TextStyle(color: Black),
       ),
-    );
-  }
-
-  Expanded _image(int index) {
-    return Expanded(
-      flex: 2,
-      child: Container(
-        margin: EdgeInsets.symmetric(horizontal: 3.w),
-        decoration: BoxDecoration(
-          color: Grey,
-          image: DecorationImage(
-            fit: BoxFit.cover,
-            image: CachedNetworkImageProvider(
-              items[index].productImage!,
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Expanded _information(int index) {
-    return Expanded(
-      flex: 5,
-      child: Container(
-        margin: EdgeInsets.only(right: 4.w),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                _title(index),
-                SizedBox(height: 1.h),
-                _type(index),
-              ],
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                _Quantity(
-                  items: items,
-                  index: index,
-                ),
-                _price(index),
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Text _title(int index) {
-    return Text(
-      items[index].productName!,
-      style: TextStyle(
-        color: Grey,
-        fontSize: 13.sp,
-        fontWeight: FontWeight.w600,
-      ),
-    );
-  }
-
-  Text _type(int index) {
-    return Text(
-      "(${items[index].productType!})",
-      style: TextStyle(
-        color: Colors.grey[700],
-        fontSize: 10.sp,
-      ),
-    );
-  }
-
-  Row _price(int index) {
-    return Row(
-      children: [
-        Text(
-          "₹" + ' ' + items[index].price! + ".00",
-          style: TextStyle(
-            color: Colors.grey[700],
-            fontSize: 11.sp,
-          ),
-        ),
-      ],
-    );
-  }
-
-  Divider _divider() {
-    return Divider(
-      height: 0,
-      color: Colors.grey,
-      thickness: 1,
     );
   }
 }
 
 class _Quantity extends StatefulWidget {
-  const _Quantity({
+  _Quantity({
     Key? key,
     required this.index,
-    required this.items,
+    this.quantity,
+    required this.getListCartItemsBLOC,
   }) : super(key: key);
 
-  final List<MyCartModel> items;
   final int index;
+  final int? quantity;
+  final GetListCartItemsBLOC getListCartItemsBLOC;
 
   @override
   __QuantityState createState() => __QuantityState();
@@ -297,6 +225,7 @@ class __QuantityState extends State<_Quantity> {
   @override
   void initState() {
     _myCartQtyBLOC = new MyCartQtyBLOC();
+    _myCartQtyBLOC.setValue(widget.quantity!);
     super.initState();
   }
 
@@ -346,9 +275,9 @@ class __QuantityState extends State<_Quantity> {
       context: context,
       builder: (context) {
         return _QuantityDialogUI(
-          items: widget.items,
           index: index,
           myCartQtyBLOC: _myCartQtyBLOC,
+          getListCartItemsBLOC: widget.getListCartItemsBLOC,
         );
       },
     );
@@ -358,14 +287,14 @@ class __QuantityState extends State<_Quantity> {
 class _QuantityDialogUI extends StatefulWidget {
   _QuantityDialogUI({
     Key? key,
-    required this.items,
     required this.index,
     required this.myCartQtyBLOC,
+    required this.getListCartItemsBLOC,
   }) : super(key: key);
 
-  final List<MyCartModel> items;
   final int index;
   final MyCartQtyBLOC myCartQtyBLOC;
+  final GetListCartItemsBLOC getListCartItemsBLOC;
 
   @override
   __QuantityDialogUIState createState() => __QuantityDialogUIState();
@@ -518,7 +447,7 @@ class __QuantityDialogUIState extends State<_QuantityDialogUI> {
 
   Text _title() {
     return Text(
-      widget.items[widget.index].productName!,
+      "${_getListCartItemsResponse!.data![widget.index].product!.name!}",
       style: TextStyle(
         color: Black,
         fontSize: 18.sp,
@@ -533,7 +462,7 @@ class __QuantityDialogUIState extends State<_QuantityDialogUI> {
       decoration: BoxDecoration(
         image: DecorationImage(
           image: CachedNetworkImageProvider(
-            widget.items[widget.index].productImage!,
+            "${_getListCartItemsResponse!.data![widget.index].product!.productImages!}",
           ),
         ),
       ),
@@ -553,69 +482,212 @@ class __QuantityDialogUIState extends State<_QuantityDialogUI> {
       );
       return;
     }
+    final productId =
+        _getListCartItemsResponse!.data![widget.index].productId.toString();
 
     final editCartModel = EditCartModel(
-      productId: '3',
+      productId: productId,
       quantity: _quantity,
     );
 
     _editCartBLOC.editCart(editCartModel);
+
+    widget.getListCartItemsBLOC.add(Status.LOADING);
   }
 }
 
-class _QuantityDropDown extends StatefulWidget {
-  final int? quantity;
+class _ListItemDismissible extends StatefulWidget {
+  final int index;
+  final GetListCartItemsResponse? getListCartItemsResponse;
+  final GetListCartItemsBLOC getListCartItemsBLOC;
 
-  const _QuantityDropDown({Key? key, this.quantity}) : super(key: key);
+  _ListItemDismissible({
+    required this.index,
+    required this.getListCartItemsResponse,
+    required this.getListCartItemsBLOC,
+  });
+
   @override
-  _QuantityDropDownState createState() => _QuantityDropDownState();
+  __ListItemDismissibleState createState() => __ListItemDismissibleState();
 }
 
-class _QuantityDropDownState extends State<_QuantityDropDown> {
-  MyCartQtyBLOC _myCartQtyBLOC = new MyCartQtyBLOC();
+class __ListItemDismissibleState extends State<_ListItemDismissible> {
+  late int index = widget.index;
+  late GetListCartItemsResponse _getListCartItemsResponse =
+      widget.getListCartItemsResponse!;
+  late final DeleteItemFromCartBLOC _deleteItemProvider;
 
   @override
-  void dispose() {
-    _myCartQtyBLOC.dispose();
-    super.dispose();
+  void didChangeDependencies() {
+    _deleteItemProvider = BlocProvider.of<DeleteItemFromCartBLOC>(context);
+    super.didChangeDependencies();
   }
 
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder<int>(
-      initialData: widget.quantity,
-      stream: _myCartQtyBLOC.stream,
-      builder: (context, snapshot) {
-        return Container(
-          margin: EdgeInsets.all(3),
-          alignment: Alignment.center,
-          color: Colors.grey[200],
-          height: 4.5.h,
-          width: 11.w,
-          child: DropdownButton<int>(
-            onChanged: (val) {
-              _myCartQtyBLOC.setValue(val!);
-            },
-            value: snapshot.data,
-            underline: Container(),
-            style: TextStyle(
-              color: LightGrey,
-            ),
-            icon: Icon(
-              Icons.keyboard_arrow_down_sharp,
-              size: 14.sp,
-            ),
-            items: quantity
-                .map<DropdownMenuItem<int>>(
-                  (int value) => DropdownMenuItem<int>(
-                    value: value,
-                    child: Text('$value'),
-                  ),
-                )
-                .toList(),
-          ),
-        );
+    return Dismissible(
+      confirmDismiss: (val) async => await _delete(),
+      onDismissed: (val) {
+        widget.getListCartItemsBLOC.add(Status.LOADING);
       },
+      key: ValueKey('$index'),
+      direction: DismissDirection.endToStart,
+      background: _dissmissibleBackground(),
+      child: Column(
+        children: [
+          Container(
+            height: 16.h,
+            child: Container(
+              margin: EdgeInsets.symmetric(
+                vertical: 2.1.h,
+                horizontal: 1.3.w,
+              ),
+              child: Row(
+                children: [
+                  _image(index),
+                  _information(index),
+                ],
+              ),
+            ),
+          ),
+          _divider(),
+        ],
+      ),
+    );
+  }
+
+  Future<bool> _delete() async {
+    _deleteItemProvider.add(Status.LOADING);
+
+    bool dis = false;
+
+    _deleteItemProvider.stream.listen(
+      (state) {
+        if (state.status == Status.COMPLETED) {
+          dis = true;
+
+          ShowToast.toast(state.data!.userMsg!, context, 3);
+        } else if (state.status == Status.ERROR) {
+          dis = false;
+          ShowToast.toast(state.data!.userMsg!, context, 3);
+        }
+      },
+    );
+    await Future.delayed(Duration(seconds: 1));
+
+    return dis;
+  }
+
+  Container _dissmissibleBackground() {
+    return Container(
+      alignment: Alignment.centerRight,
+      padding: EdgeInsets.only(right: 5.w),
+      child: Container(
+        height: 10.w,
+        width: 10.w,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          color: Red,
+        ),
+        child: Icon(Icons.delete, color: White),
+      ),
+    );
+  }
+
+  Expanded _image(int index) {
+    return Expanded(
+      flex: 2,
+      child: Container(
+        margin: EdgeInsets.symmetric(horizontal: 3.w),
+        decoration: BoxDecoration(
+          color: Grey,
+          image: DecorationImage(
+            fit: BoxFit.cover,
+            image: CachedNetworkImageProvider(
+              _getListCartItemsResponse.data![index].product!.productImages!,
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Expanded _information(int index) {
+    return Expanded(
+      flex: 5,
+      child: Container(
+        margin: EdgeInsets.only(right: 4.w),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceAround,
+          children: [
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _title(index),
+                SizedBox(height: 1.h),
+                _type(index),
+              ],
+            ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                _Quantity(
+                  index: index,
+                  quantity: _getListCartItemsResponse.data![index].quantity,
+                  getListCartItemsBLOC: widget.getListCartItemsBLOC,
+                ),
+                _price(index),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Text _title(int index) {
+    return Text(
+      _getListCartItemsResponse.data![index].product!.name!,
+      style: TextStyle(
+        color: Grey,
+        fontSize: 13.sp,
+        fontWeight: FontWeight.w600,
+      ),
+    );
+  }
+
+  Text _type(int index) {
+    return Text(
+      "(${_getListCartItemsResponse.data![index].product!.productCategory})",
+      style: TextStyle(
+        color: Colors.grey[700],
+        fontSize: 10.sp,
+      ),
+    );
+  }
+
+  Row _price(int index) {
+    String price =
+        _getListCartItemsResponse.data![index].product!.cost!.toString();
+    return Row(
+      children: [
+        Text(
+          "₹" + ' ' + price + ".00",
+          style: TextStyle(
+            color: Colors.grey[700],
+            fontSize: 11.sp,
+          ),
+        ),
+      ],
+    );
+  }
+
+  Divider _divider() {
+    return Divider(
+      height: 0,
+      color: Colors.grey,
+      thickness: 1,
     );
   }
 }

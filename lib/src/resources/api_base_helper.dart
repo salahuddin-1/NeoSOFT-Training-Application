@@ -63,6 +63,7 @@ class ApiBaseHelper {
 
     if (_responseStatus.contains(status)) {
       var reponseJson = jsonDecode(response.body);
+
       return reponseJson;
     }
 

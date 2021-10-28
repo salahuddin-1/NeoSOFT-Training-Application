@@ -1,7 +1,8 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/order_BLOC.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/get_products_list_repo.dart';
 import 'package:neosoft_training_application/src/ui/login/login.dart';
@@ -94,7 +95,10 @@ class _HomeScreenState extends State<HomeScreen> {
               onPressed: () {
                 Push(
                   context,
-                  screen: MyOrders(),
+                  screen: BlocProvider(
+                    create: (context) => OrdersListBLOC(),
+                    child: MyOrders(),
+                  ),
                 );
               },
             ),

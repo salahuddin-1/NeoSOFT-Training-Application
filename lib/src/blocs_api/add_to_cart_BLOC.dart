@@ -1,6 +1,7 @@
 import 'package:flutter/cupertino.dart';
 import 'package:neosoft_training_application/src/blocs/circular_progress_BLOC.dart';
 import 'package:neosoft_training_application/src/models/add_to_cart_model.dart';
+import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/add_to_cart_repo.dart';
 import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
 import 'package:neosoft_training_application/src/widgets/toast.dart';
@@ -39,6 +40,7 @@ class AddToCartBLOC {
       (response) {
         if (response.status == Status.COMPLETED) {
           ShowToast.toast(response.data!.userMsg!, _context, 4);
+          Pop(_context);
         } else if (response.status == Status.ERROR) {
           ShowToast.toast(response.message!, _context, 4);
         }
