@@ -1,7 +1,7 @@
 import 'package:neosoft_training_application/src/models/account_details_model.dart';
 
 import '/src/resources/api_base_helper.dart';
-import '/src/ui/homepage.dart';
+import '/src/ui/homescreen/homescreen.dart';
 
 class GetAccountDetailsRepo {
   final _url = "users/getUserData";

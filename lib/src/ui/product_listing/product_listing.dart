@@ -5,7 +5,6 @@ import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/models/product_list_response_model.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
-import 'package:neosoft_training_application/src/resources/get_product_details_repo.dart';
 import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
 import 'package:neosoft_training_application/src/widgets/error_widget.dart';

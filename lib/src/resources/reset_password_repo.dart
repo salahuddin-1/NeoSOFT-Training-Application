@@ -1,5 +1,5 @@
 import 'package:neosoft_training_application/src/models/reset_password_model.dart';
-import 'package:neosoft_training_application/src/ui/homepage.dart';
+import '/src/ui/homescreen/homescreen.dart';
 import 'api_base_helper.dart';
 
 class ResetPasswordRepo {

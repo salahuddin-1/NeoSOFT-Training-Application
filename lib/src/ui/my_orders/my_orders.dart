@@ -54,7 +54,8 @@ class _MyOrdersState extends State<MyOrders> {
               padding: EdgeInsets.symmetric(vertical: 1.h),
               itemCount: _ordersListResponse!.data!.length,
               itemBuilder: (context, index) {
-                var orders = _ordersListResponse!.data![index];
+                var orders =
+                    _ordersListResponse!.data!.reversed.toList()[index];
 
                 return Material(
                   child: InkWell(

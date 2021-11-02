@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:neosoft_training_application/src/blocs/circular_progress_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items_BLOC.dart';
 import 'package:neosoft_training_application/src/models/login_model.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/login_api.dart';
@@ -26,8 +28,27 @@ class LoginBLOC {
       if (responseModel.status == 200) {
         PushAndRemoveUntil(
           _context!,
-          screen: HomeScreen(),
+          screen: BlocProvider.value(
+            value: GetListCartItemsBLOC(),
+            child: HomeScreen(
+              credentials: {
+                'email': loginModel.email,
+                'password': loginModel.password,
+                'accessToken': responseModel.data!.accessToken!,
+              },
+            ),
+          ),
         );
+        // PushAndRemoveUntil(
+        //   _context!,
+        //   screen: HomeScreen(
+        //     credentials: {
+        //       'email': loginModel.email,
+        //       'password': loginModel.password,
+        //       'accessToken': responseModel.data!.accessToken!,
+        //     },
+        //   ),
+        // );
 
         ShowToast.toast(
           responseModel.userMsg!,

@@ -1,5 +1,7 @@
 import 'package:flutter/cupertino.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:neosoft_training_application/src/blocs/circular_progress_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items_BLOC.dart';
 import 'package:neosoft_training_application/src/models/user_model.dart';
 import 'package:neosoft_training_application/src/navigation/navigation.dart';
 import 'package:neosoft_training_application/src/resources/register_api.dart';
@@ -28,8 +30,27 @@ class RegisterBLOC {
       if (response.status == 200) {
         PushAndRemoveUntil(
           _context!,
-          screen: HomeScreen(),
+          screen: BlocProvider.value(
+            value: GetListCartItemsBLOC(),
+            child: HomeScreen(
+              credentials: {
+                'email': registerModel.email,
+                'password': registerModel.password,
+                'accessToken': response.data!.accessToken!,
+              },
+            ),
+          ),
         );
+        // PushAndRemoveUntil(
+        //   _context!,
+        //   screen: HomeScreen(
+        //     credentials: {
+        //       'email': registerModel.email,
+        //       'password': registerModel.password,
+        //       'accessToken': response.data!.accessToken!,
+        //     },
+        //   ),
+        // );
       }
       ShowToast.toast(
         response.userMsg!,

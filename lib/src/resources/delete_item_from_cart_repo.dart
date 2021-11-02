@@ -1,6 +1,6 @@
 import 'package:neosoft_training_application/src/models/delete_item_from_cart_model.dart';
 import 'package:neosoft_training_application/src/resources/api_base_helper.dart';
-import 'package:neosoft_training_application/src/ui/homepage.dart';
+import '/src/ui/homescreen/homescreen.dart';
 
 class DeleteItemFromCartRepo {
   final _endPointURL = "deleteCart";

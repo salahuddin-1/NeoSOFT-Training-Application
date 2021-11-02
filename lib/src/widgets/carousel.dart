@@ -44,7 +44,6 @@ class _CarouselState extends State<Carousel> {
   void dispose() {
     _carouselBLOC.dispose();
     _pageController.dispose();
-    print('carousel disposed');
     super.dispose();
   }
 
@@ -79,8 +78,8 @@ class _CarouselState extends State<Carousel> {
       builder: (context, snapshot) {
         if (snapshot.hasData) {
           return Positioned(
-            left: DevicePixels.width * 40,
-            right: DevicePixels.width * 40,
+            left: DevicePixels.width * 38,
+            right: DevicePixels.width * 38,
             top: isLandScape
                 ? DevicePixels.width * 40
                 : DevicePixels.height * 31.5,
@@ -101,7 +100,8 @@ class _CarouselState extends State<Carousel> {
   }
 
   AnimatedContainer _rounded({required Color color}) {
-    var width = DevicePixels.width * 2.5;
+    var width = DevicePixels.width * 2.4;
+
     return AnimatedContainer(
       duration: Duration(milliseconds: 250),
       decoration: BoxDecoration(

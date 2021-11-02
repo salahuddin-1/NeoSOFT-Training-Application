@@ -35,6 +35,7 @@ class _LoginScreenState extends State<LoginScreen> {
   void dispose() {
     _usernameCntrl.dispose();
     _passwordCntrl.dispose();
+    _loginBLOC.dispose();
 
     super.dispose();
   }

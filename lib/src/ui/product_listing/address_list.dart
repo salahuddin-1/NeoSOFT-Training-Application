@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:neosoft_training_application/src/blocs/slelect_address_BLOC.dart';
 import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/address_BLOC.dart';
+import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/get_list_cart_items_BLOC.dart';
 import 'package:neosoft_training_application/src/blocs_api_flutter_bloc/order_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/models/order_model.dart';
@@ -34,11 +35,6 @@ class _AddressListState extends State<AddressList> {
     addBLOC = BlocProvider.of<AddressBLOC>(context);
     addBLOC.add(Status.LOADING);
     super.didChangeDependencies();
-  }
-
-  @override
-  void initState() {
-    super.initState();
   }
 
   @override
@@ -276,7 +272,14 @@ class _AddressListState extends State<AddressList> {
       (event) {
         if (event.status == Status.COMPLETED) {
           ShowToast.toast(event.data!.message!, context, 4);
-          PushAndRemoveUntil(context, screen: HomeScreen());
+
+          PushAndRemoveUntil(
+            context,
+            screen: BlocProvider.value(
+              value: GetListCartItemsBLOC(),
+              child: HomeScreen(credentials: credentials),
+            ),
+          );
         } else if (event.status == Status.ERROR) {
           ShowToast.toast(event.message!, context, 4);
         }

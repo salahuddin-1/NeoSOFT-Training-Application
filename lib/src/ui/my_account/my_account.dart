@@ -32,6 +32,8 @@ class _MyAccountState extends State<MyAccount> {
 
   late final GetAccountDetailsBLOC _getAccountDetailsBLOC;
 
+  String? profilePic;
+
   @override
   void initState() {
     _firstNameCntrl = new TextEditingController();
@@ -89,6 +91,8 @@ class _MyAccountState extends State<MyAccount> {
                   _emailCntrl.text = userData.email!;
                   _phoneCntrlCntrl.text = userData.phoneNo!;
                   _dobCntrl.text = userData.dob ?? '';
+
+                  this.profilePic = userData.profilePic;
 
                   return _screen();
 
@@ -164,6 +168,7 @@ class _MyAccountState extends State<MyAccount> {
           email: _emailCntrl.text,
           phoneNumber: _phoneCntrlCntrl.text,
           dob: _dobCntrl.text,
+          profilePicURL: this.profilePic!,
         ),
       ),
     );
@@ -180,7 +185,7 @@ class _MyAccountState extends State<MyAccount> {
           shape: BoxShape.circle,
           image: DecorationImage(
             image: CachedNetworkImageProvider(
-              images[0],
+              this.profilePic!,
             ),
             fit: BoxFit.cover,
           ),
@@ -285,97 +290,3 @@ class _ResetPassword extends StatelessWidget {
     );
   }
 }
-
-final body = {
-  "status": 200,
-  "data": [
-    {
-      "user_data": {
-        "id": 8,
-        "role_id": 2,
-        "first_name": "",
-        "last_name": "",
-        "email": "",
-        "username": "",
-        "profile_pic": "",
-        "country_id": "",
-        "gender": "",
-        "phone_no": "",
-        "dob": "",
-        "is_active": true,
-        "created": "",
-        "modified": "",
-        "access_token": ""
-      },
-      "product_categories": [
-        {
-          "id": 1,
-          "name": "Table",
-          "icon_image": "",
-          "created": "2015-08-11T10:12:02+0000",
-          "modified": "2015-08-31T11:32:49+0000"
-        },
-        {
-          "id": 2,
-          "name": "Sofa",
-          "icon_image": "",
-          "created": "2015-08-11T10:12:02+0000",
-          "modified": "2015-08-31T11:32:49+0000"
-        },
-      ],
-      "total_carts": 2,
-      "total_orders": 2
-    }
-  ],
-  "message": "",
-  "user_msg": ""
-};
-
-final data = {
-  "status": 200,
-  "data": {
-    "user_data": {
-      "id": 3424,
-      "role_id": 2,
-      "first_name": "Salahuddin",
-      "last_name": "Shaikh",
-      "email": "salahuddinshaikh16@gmail.com",
-      "username": "SalahuddinShaikh",
-      "profile_pic": null,
-      "country_id": null,
-      "gender": "Male",
-      "phone_no": 8898911744,
-      "dob": null,
-      "is_active": true,
-      "created": "2021-10-05T06:27:27+0000",
-      "modified": "2021-10-12T06:21:59+0000",
-      "access_token": "615bf04ef24fb"
-    },
-    "product_categories": [
-      {
-        "id": 1,
-        "name": "Table",
-        "icon_image":
-            "http://staging.php-dev.in:8844/trainingapp/uploads/cat_icon_img/thumb/medium/a4340b6e08070902ad7f2838c.jpg",
-        "created": " 2015-08-12T08:03:13+0000",
-        "modified": " 2015-09-15T09:36:59+0000"
-      },
-      {
-        "id": 2,
-        "name": "Chairs",
-        "icon_image":
-            "http://staging.php-dev.in:8844/trainingapp/uploads/cat_icon_img/thumb/medium/699489da778c514dd6a321587.jpg",
-        "created": " 2015-08-12T08:03:21+0000",
-        "modified": " 2015-09-09T11:17:34+0000"
-      },
-      {
-        "id": 3,
-        "name": "Sofa",
-        "icon_image":
-            "http://staging.php-dev.in:8844/trainingapp/uploads/cat_icon_img/thumb/medium/e273cd55d0317778efa26078b.jpg",
-        "created": "2015-08-12T08:03:28+0000",
-        "modified": "2015-09-15T09:37:59+0000",
-      }
-    ]
-  }
-};

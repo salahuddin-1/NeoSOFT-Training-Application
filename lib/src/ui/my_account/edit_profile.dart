@@ -1,19 +1,19 @@
-import 'package:cached_network_image/cached_network_image.dart';
+import 'dart:convert';
+import 'dart:io';
+
 import 'package:flutter/material.dart';
+import 'package:cached_network_image/cached_network_image.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:sizer/sizer.dart';
+
+import '../../resources/open_gallery_camera.dart';
 import '../../blocs_api/update_acc_details_BLOC.dart';
 import '../../constants/colors.dart';
-import '../../constants/images.dart';
 import '../../models/update_acc_details_model.dart';
-import '../../navigation/navigation.dart';
-import '../../resources/update_acc_details_repo.dart';
-import '../login/login.dart';
 import '../../widgets/background_gradient.dart';
 import '../../widgets/circular_progress.dart';
 import '../../widgets/common_appbar.dart';
 import '../../widgets/textfield_border_decoration.dart';
-import 'package:sizer/sizer.dart';
-
-import '../../inherited_widget/inherited_widget.dart';
 
 class EditProfile extends StatefulWidget {
   final String firstName;
@@ -21,6 +21,7 @@ class EditProfile extends StatefulWidget {
   final String email;
   final String phoneNumber;
   final String dob;
+  final String profilePicURL;
 
   const EditProfile({
     Key? key,
@@ -29,6 +30,7 @@ class EditProfile extends StatefulWidget {
     required this.email,
     required this.phoneNumber,
     required this.dob,
+    required this.profilePicURL,
   }) : super(key: key);
 
   @override
@@ -43,6 +45,9 @@ class _EditProfileState extends State<EditProfile> {
   late final TextEditingController _dobCntrl;
 
   late final UpdateAccountDetailsBLOC _updateAccountDetailsBLOC;
+
+  String img64 = '';
+  File? tempImageFile;
 
   @override
   void initState() {
@@ -74,6 +79,8 @@ class _EditProfileState extends State<EditProfile> {
     _emailCntrl.dispose();
     _phoneCntrlCntrl.dispose();
     _dobCntrl.dispose();
+
+    _updateAccountDetailsBLOC.dispose();
 
     super.dispose();
   }
@@ -149,19 +156,9 @@ class _EditProfileState extends State<EditProfile> {
     );
   }
 
-  _submit() {
-    final model = UpdateAccountDetailsModel(
-      firstName: _firstNameCntrl.text.trim(),
-      lastName: _lasttNameCntrl.text.trim(),
-      email: _emailCntrl.text.trim(),
-      phoneNumber: _phoneCntrlCntrl.text.trim(),
-      dob: _dobCntrl.text.trim(),
-    );
+  final _handleGalleryAndCamera = HandleGalleryAndCamera();
 
-    _updateAccountDetailsBLOC.update(model);
-  }
-
-  Center _profilePic() {
+  Widget _profilePic() {
     return Center(
       heightFactor: 1.3,
       child: Container(
@@ -170,11 +167,31 @@ class _EditProfileState extends State<EditProfile> {
         decoration: BoxDecoration(
           color: White,
           shape: BoxShape.circle,
-          image: DecorationImage(
-            image: CachedNetworkImageProvider(
-              images[0],
+          image: tempImageFile != null
+              ? DecorationImage(
+                  image: FileImage(tempImageFile!),
+                  fit: BoxFit.cover,
+                )
+              : DecorationImage(
+                  image: CachedNetworkImageProvider(
+                    widget.profilePicURL,
+                  ),
+                  fit: BoxFit.cover,
+                ),
+        ),
+        child: InkWell(
+          onTap: _showModalBottomSheet,
+          child: Container(
+            padding: EdgeInsets.all(22),
+            decoration: BoxDecoration(
+              color: Colors.black.withOpacity(0.5),
+              shape: BoxShape.circle,
             ),
-            fit: BoxFit.cover,
+            child: FittedBox(
+              child: Text(
+                "Edit Profile Photo",
+              ),
+            ),
           ),
         ),
       ),
@@ -246,4 +263,104 @@ class _EditProfileState extends State<EditProfile> {
   TextStyle _inputColor() => TextStyle(color: White);
 
   SizedBox get _sizeBox => SizedBox(height: 2.h);
+
+  // ----------------------------- EVENTS --------------------------------------
+
+  Future<dynamic> _showModalBottomSheet() {
+    return showModalBottomSheet(
+      context: context,
+      builder: (context) {
+        return _ShowModalBottomSheet(
+          onTapCamera: () {
+            selectImage("Camera");
+          },
+          onTapGallery: () {
+            selectImage('Gallery');
+          },
+          onTapCancel: () {},
+        );
+      },
+    );
+  }
+
+  void selectImage(String type) async {
+    XFile? file;
+
+    if (type == 'Gallery') {
+      file = await _handleGalleryAndCamera.handleChooseFromGallery();
+    } else {
+      file = await _handleGalleryAndCamera.handleChooseFromCamera();
+    }
+
+    if (file != null) {
+      final bytes = await file.readAsBytes();
+      String img64 = base64Encode(bytes);
+      this.img64 = img64;
+      tempImageFile = File(file.path);
+      setState(() {});
+    }
+
+    Navigator.pop(context);
+  }
+
+  _submit() {
+    final model = UpdateAccountDetailsModel(
+      firstName: _firstNameCntrl.text.trim(),
+      lastName: _lasttNameCntrl.text.trim(),
+      email: _emailCntrl.text.trim(),
+      phoneNumber: _phoneCntrlCntrl.text.trim(),
+      dob: _dobCntrl.text.trim(),
+      profilePic: '',
+    );
+
+    if (img64.isNotEmpty) {
+      final _startPointURL = "data:image/jpg;base64,";
+      model.profilePic = _startPointURL + this.img64;
+    }
+
+    _updateAccountDetailsBLOC.update(model);
+  }
+}
+
+class _ShowModalBottomSheet extends StatelessWidget {
+  final Function onTapGallery;
+  final Function onTapCamera;
+  final Function onTapCancel;
+
+  const _ShowModalBottomSheet({
+    Key? key,
+    required this.onTapGallery,
+    required this.onTapCamera,
+    required this.onTapCancel,
+  }) : super(key: key);
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: <Widget>[
+        ListTile(
+          leading: Icon(Icons.photo),
+          title: Text('Choose from Gallery'),
+          onTap: () {
+            onTapGallery();
+          },
+        ),
+        ListTile(
+          leading: Icon(Icons.videocam),
+          title: Text('Take a Picture'),
+          onTap: () {
+            onTapCamera();
+          },
+        ),
+        ListTile(
+          leading: Icon(Icons.close),
+          title: Text('Cancel'),
+          onTap: () {
+            Navigator.pop(context);
+          },
+        ),
+      ],
+    );
+  }
 }

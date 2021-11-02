@@ -259,10 +259,10 @@ class _AddAddressState extends State<AddAddress> {
     );
   }
 
-  void _addAddress() {
+  void _addAddress() async {
     if (_formKey.currentState!.validate()) {
+      await _saveAddressToLocalStorage.saveAddress(_combineAddress);
       widget.addBLOC.add(Status.LOADING);
-      _saveAddressToLocalStorage.saveAddress(_combineAddress);
       Pop(context);
     }
   }

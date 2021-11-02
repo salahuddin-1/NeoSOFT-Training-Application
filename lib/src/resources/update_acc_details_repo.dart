@@ -1,6 +1,5 @@
 import 'package:neosoft_training_application/src/models/update_acc_details_model.dart';
-
-import '/src/ui/homepage.dart';
+import '/src/ui/homescreen/homescreen.dart';
 
 import 'api_base_helper.dart';
 
@@ -10,6 +9,7 @@ class UpdateAccountDetailsRepo {
 
   Future<UpdateAccountDetailsResponseModel> update(
       UpdateAccountDetailsModel detailsModel) async {
+    print('Post : ' + detailsModel.profilePic!);
     final response = await _helper.post(
       _url,
       body: {
@@ -17,7 +17,7 @@ class UpdateAccountDetailsRepo {
         "last_name": detailsModel.lastName,
         "email": detailsModel.email,
         "dob": detailsModel.dob,
-        "profile_pic": "",
+        "profile_pic": detailsModel.profilePic,
         "phone_no": detailsModel.phoneNumber,
       },
       headers: {

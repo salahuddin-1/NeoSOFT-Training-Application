@@ -217,16 +217,16 @@ class __QuantityState extends State<_Quantity> {
   late MyCartQtyBLOC _myCartQtyBLOC;
 
   @override
-  void dispose() {
-    _myCartQtyBLOC.dispose();
-    super.dispose();
-  }
-
-  @override
   void initState() {
     _myCartQtyBLOC = new MyCartQtyBLOC();
     _myCartQtyBLOC.setValue(widget.quantity!);
     super.initState();
+  }
+
+  @override
+  void dispose() {
+    _myCartQtyBLOC.dispose();
+    super.dispose();
   }
 
   @override

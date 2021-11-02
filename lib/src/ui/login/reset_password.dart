@@ -38,6 +38,12 @@ class _ResetPasswordState extends State<ResetPassword> {
   }
 
   @override
+  void dispose() {
+    _resetPasswordBLOC.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: appbar(context, title: 'Reset Password'),

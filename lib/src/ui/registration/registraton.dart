@@ -48,6 +48,7 @@ class _RegistrationState extends State<Registration> {
   @override
   void dispose() {
     _radioBloc.dispose();
+    _registerBLOC.dispose();
 
     super.dispose();
   }

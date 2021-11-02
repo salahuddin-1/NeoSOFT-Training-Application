@@ -36,6 +36,8 @@ dependencies:
   flutter_styled_toast: ^2.0.0
   shared_preferences:
   flutter_bloc: ^7.3.1
+  google_maps_flutter: 
+  image_picker: 
 
 
 dev_dependencies:
