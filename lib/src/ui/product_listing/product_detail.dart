@@ -1,16 +1,17 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
+import 'package:neosoft_training_application/src/blocs/select_product_detail_image_BLOC.dart';
 import 'package:neosoft_training_application/src/blocs_api/add_to_cart_BLOC.dart';
 import 'package:neosoft_training_application/src/blocs_api/get_product_details_BLOC.dart';
 import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/models/add_to_cart_model.dart';
 import 'package:neosoft_training_application/src/models/product_details_response_model.dart';
-import 'package:neosoft_training_application/src/resources/add_to_cart_repo.dart';
 import 'package:neosoft_training_application/src/resources/api_reponse_generic.dart';
 import 'package:neosoft_training_application/src/ui/product_listing/ratings_pop_up.dart';
 import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/common_appbar.dart';
 import 'package:neosoft_training_application/src/widgets/error_widget.dart';
+import 'package:photo_view/photo_view.dart';
 import 'package:sizer/sizer.dart';
 
 class ProductDetail extends StatefulWidget {
@@ -32,6 +33,7 @@ class _ProductDetailState extends State<ProductDetail> {
   late GetProductDetailsBLOC _getProductDetailsBLOC;
   late AddToCartBLOC _addToCartBLOC;
   late AddtoCartModel addtoCartModel;
+  late SelectProductDetailImageBLOC _selectProductDetailImageBLOC;
 
   ProductDetailsResponseModel? tableModel;
   RatingsPopUp? _ratingsPopUp;
@@ -46,6 +48,8 @@ class _ProductDetailState extends State<ProductDetail> {
       productId: widget.productId,
       quantity: '1',
     );
+
+    _selectProductDetailImageBLOC = SelectProductDetailImageBLOC();
 
     super.initState();
   }
@@ -63,6 +67,7 @@ class _ProductDetailState extends State<ProductDetail> {
     _ratingsPopUp!.setRatingBLOC.dispose();
     _ratingsPopUp!.setRatingsStarBLOC.dispose();
     _addToCartBLOC.dispose();
+    _selectProductDetailImageBLOC.dispose();
 
     super.dispose();
   }
@@ -205,121 +210,185 @@ class _ProductDetailState extends State<ProductDetail> {
     );
   }
 
+// TODO
   Widget _body() {
     return ListView(
       children: [
         _header(),
-        Container(
-          margin: EdgeInsets.all(4.w),
-          padding: EdgeInsets.only(left: 3.w, right: 2.w),
-          height: 100.h,
-          color: White,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        StreamBuilder<Map<int, bool>>(
+          stream: _selectProductDetailImageBLOC.stream,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              final map = snapshot.data;
+
+              return Container(
+                margin: EdgeInsets.all(4.w),
+                padding: EdgeInsets.only(left: 3.w, right: 2.w),
+                height: 100.h,
+                color: White,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    _price(),
-                    Row(
-                      children: [
-                        _isOutOfStock ? _outOfStock() : SizedBox(),
-                        IconButton(
-                          onPressed: () {},
-                          icon: Icon(
-                            Icons.share,
-                            color: LightGrey,
-                            size: 20.sp,
+                    Container(
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          _price(),
+                          Row(
+                            children: [
+                              _isOutOfStock ? _outOfStock() : SizedBox(),
+                              IconButton(
+                                onPressed: () {},
+                                icon: Icon(
+                                  Icons.share,
+                                  color: LightGrey,
+                                  size: 20.sp,
+                                ),
+                              ),
+                            ],
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
+                    ),
+                    Container(
+                      alignment: Alignment.center,
+                      height: 44.w,
+                      child: map![0]!
+                          ? CachedNetworkImage(
+                              imageUrl:
+                                  tableModel!.data!.productImages![0].image!,
+                              width: 63.w,
+                              fit: BoxFit.fill,
+                            )
+                          : ClipRRect(
+                              child: Container(
+                                width: 63.w,
+                                decoration: BoxDecoration(),
+                                child: PhotoView(
+                                  initialScale: map[1]! ? 0.8 : 1.5,
+                                  imageProvider: CachedNetworkImageProvider(
+                                    tableModel!.data!.productImages![0].image!,
+                                  ),
+                                ),
+                              ),
+                            ),
+                    ),
+                    Container(
+                      margin: EdgeInsets.only(top: 1.h),
+                      height: 19.w,
+                      // width: 80.w,
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                _selectProductDetailImageBLOC.selectImage(0);
+                              },
+                              child: Container(
+                                child: CachedNetworkImage(
+                                  imageUrl: tableModel!
+                                      .data!.productImages![0].image!,
+                                  fit: BoxFit.cover,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Grey,
+                                  border: Border.all(
+                                    width: 1.5,
+                                    color: map[0]! ? Red : LightGrey,
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                _selectProductDetailImageBLOC.selectImage(1);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    width: 1.5,
+                                    color: map[1]! ? Red : LightGrey,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  child: Container(
+                                    child: PhotoView(
+                                      disableGestures: true,
+                                      initialScale: 0.4,
+                                      imageProvider: CachedNetworkImageProvider(
+                                        tableModel!
+                                            .data!.productImages![0].image!,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          SizedBox(width: 3.w),
+                          Expanded(
+                            child: InkWell(
+                              onTap: () {
+                                _selectProductDetailImageBLOC.selectImage(2);
+                              },
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    width: 1.5,
+                                    color: map[2]! ? Red : LightGrey,
+                                  ),
+                                ),
+                                child: ClipRRect(
+                                  child: Container(
+                                    child: PhotoView(
+                                      disableGestures: true,
+                                      initialScale: 0.7,
+                                      basePosition: Alignment.centerRight,
+                                      imageProvider: CachedNetworkImageProvider(
+                                        tableModel!
+                                            .data!.productImages![0].image!,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Divider(
+                      color: Grey,
+                      thickness: 0.6,
+                      height: 10.w,
+                    ),
+                    Text(
+                      "DESCRIPTION",
+                      style: TextStyle(
+                        color: Colors.black,
+                        fontWeight: FontWeight.w700,
+                        fontSize: 12.sp,
+                      ),
+                    ),
+                    SizedBox(height: 1.h),
+                    Text(
+                      tableModel!.data!.description!,
+                      style: TextStyle(
+                        color: LightGrey,
+                        fontWeight: FontWeight.w600,
+                        fontSize: 10.sp,
+                        height: 1.3,
+                      ),
                     ),
                   ],
                 ),
-              ),
-              Container(
-                alignment: Alignment.center,
-                height: 44.w,
-                child: CachedNetworkImage(
-                  imageUrl: tableModel!.data!.productImages![0].image!,
-                  width: 63.w,
-                  fit: BoxFit.fill,
-                ),
-              ),
-              Container(
-                margin: EdgeInsets.only(top: 1.h),
-                height: 19.w,
-                // width: 80.w,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Grey,
-                          image: DecorationImage(
-                            fit: BoxFit.fill,
-                            image: CachedNetworkImageProvider(
-                              tableModel!.data!.productImages![0].image!,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 3.w),
-                    Expanded(
-                      child: Container(
-                        child: CachedNetworkImage(
-                          imageUrl: tableModel!.data!.productImages![0].image!,
-                          fit: BoxFit.cover,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Grey,
-                        ),
-                      ),
-                    ),
-                    SizedBox(width: 3.w),
-                    Expanded(
-                      child: Container(
-                        decoration: BoxDecoration(
-                          color: Grey,
-                          image: DecorationImage(
-                            fit: BoxFit.fill,
-                            image: CachedNetworkImageProvider(
-                              tableModel!.data!.productImages![0].image!,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              Divider(
-                color: Grey,
-                thickness: 0.6,
-                height: 10.w,
-              ),
-              Text(
-                "DESCRIPTION",
-                style: TextStyle(
-                  color: Colors.black,
-                  fontWeight: FontWeight.w700,
-                  fontSize: 12.sp,
-                ),
-              ),
-              SizedBox(height: 1.h),
-              Text(
-                tableModel!.data!.description!,
-                style: TextStyle(
-                  color: LightGrey,
-                  fontWeight: FontWeight.w600,
-                  fontSize: 10.sp,
-                  height: 1.3,
-                ),
-              ),
-            ],
-          ),
+              );
+            }
+            return SizedBox.shrink();
+          },
         ),
       ],
     );

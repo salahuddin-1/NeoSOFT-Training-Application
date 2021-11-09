@@ -1,6 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 import 'package:neosoft_training_application/src/widgets/error_widget.dart';
+import 'package:neosoft_training_application/src/widgets/no_image.dart';
 import 'package:sizer/sizer.dart';
 
 import '../../blocs_api/get_account_details_BLOC.dart';
@@ -168,7 +169,7 @@ class _MyAccountState extends State<MyAccount> {
           email: _emailCntrl.text,
           phoneNumber: _phoneCntrlCntrl.text,
           dob: _dobCntrl.text,
-          profilePicURL: this.profilePic!,
+          profilePicURL: this.profilePic,
         ),
       ),
     );
@@ -177,20 +178,22 @@ class _MyAccountState extends State<MyAccount> {
   Center _profilePic() {
     return Center(
       heightFactor: 1.3,
-      child: Container(
-        height: 33.w,
-        width: 33.w,
-        decoration: BoxDecoration(
-          color: White,
-          shape: BoxShape.circle,
-          image: DecorationImage(
-            image: CachedNetworkImageProvider(
-              this.profilePic!,
+      child: this.profilePic == null
+          ? NoImage()
+          : Container(
+              height: 33.w,
+              width: 33.w,
+              decoration: BoxDecoration(
+                color: White,
+                shape: BoxShape.circle,
+                image: DecorationImage(
+                  image: CachedNetworkImageProvider(
+                    this.profilePic!,
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
     );
   }
 

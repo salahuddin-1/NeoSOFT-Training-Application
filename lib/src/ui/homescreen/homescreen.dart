@@ -20,6 +20,7 @@ import 'package:neosoft_training_application/src/constants/colors.dart';
 import 'package:neosoft_training_application/src/constants/images.dart';
 import 'package:neosoft_training_application/src/widgets/circular_progress.dart';
 import 'package:neosoft_training_application/src/widgets/error_widget.dart';
+import 'package:neosoft_training_application/src/widgets/no_image.dart';
 import 'package:sizer/sizer.dart';
 
 Map<String, String?> credentials = {};
@@ -46,6 +47,8 @@ class _HomeScreenState extends State<HomeScreen> {
   GetListCartItemsBLOC? _getListCartItemsBLOC;
   late final GetAccountDetailsBLOC _getAccountDetailsBLOC;
   String? profilePhoto;
+  String? name;
+  String? email;
 
   @override
   void didChangeDependencies() {
@@ -73,142 +76,158 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Drawer _drawer() {
     return Drawer(
-      child: Container(
-        color: Grey,
-        child: StreamBuilder<ApiResponse<GetAccountDetailsResponseModel>>(
-          stream: _getAccountDetailsBLOC.stream,
-          builder: (context, snapshot) {
-            if (snapshot.hasData) {
-              switch (snapshot.data!.status) {
-                case Status.LOADING:
-                  return Center(
-                    child: CircularProgressCustom(),
-                  );
+      child: RefreshIndicator(
+        color: Red,
+        onRefresh: () {
+          _getListCartItemsBLOC!.add(Status.LOADING);
+          return _getAccountDetailsBLOC.getAccDetails();
+        },
+        child: Container(
+          color: Grey,
+          child: StreamBuilder<ApiResponse<GetAccountDetailsResponseModel>>(
+            stream: _getAccountDetailsBLOC.stream,
+            builder: (context, snapshot) {
+              if (snapshot.hasData) {
+                switch (snapshot.data!.status) {
+                  case Status.LOADING:
+                    return Center(
+                      child: CircularProgressCustom(),
+                    );
 
-                case Status.ERROR:
-                  return ErrorWidgetCustom(
-                    message: snapshot.data!.message!,
-                    onPressed: () {
-                      _getAccountDetailsBLOC.getAccDetails();
-                    },
-                  );
+                  case Status.ERROR:
+                    return ErrorWidgetCustom(
+                      message: snapshot.data!.message!,
+                      onPressed: () {
+                        _getAccountDetailsBLOC.getAccDetails();
+                      },
+                    );
 
-                case Status.COMPLETED:
-                  profilePhoto =
-                      snapshot.data!.data!.data!.userData!.profilePic!;
+                  case Status.COMPLETED:
+                    profilePhoto =
+                        snapshot.data!.data!.data!.userData!.profilePic;
 
-                  return BlocBuilder<GetListCartItemsBLOC,
-                      ApiResponse<GetListCartItemsResponse>>(
-                    builder: (context, state) {
-                      if (state.status == Status.LOADING) {
-                        return Center(
-                          child: CircularProgressCustom(),
-                        );
-                      } else if (state.status == Status.ERROR) {
-                        return ErrorWidgetCustom(
-                          message: state.message!,
-                          onPressed: () {
-                            _getListCartItemsBLOC!.add(Status.LOADING);
-                          },
-                        );
-                      } else if (state.status == Status.COMPLETED) {
-                        final cartItemsLength = state.data!.count;
+                    name = snapshot.data!.data!.data!.userData!.firstName! +
+                        " " +
+                        snapshot.data!.data!.data!.userData!.lastName!;
 
-                        return ListView(
-                          children: [
-                            _drawerHeader(),
-                            SizedBox(height: 3.h),
-                            _drawerItems(
-                              title: 'My Cart',
-                              image: 'MyCart',
-                              trailing: cartItemsLength != null
-                                  ? _cartIemCount(cartItemsLength)
-                                  : SizedBox.shrink(),
-                              onPressed: () {
-                                Push(
-                                  context,
-                                  screen: BlocProvider(
-                                    create: (context) => GetListCartItemsBLOC(),
-                                    child: MyCart(),
-                                  ),
-                                );
-                              },
-                            ),
-                            _drawerItems(
-                                title: 'Tables',
-                                image: 'Tables',
-                                onPressed: () {
-                                  Push(context,
-                                      screen: ProductListing(title: 'Tables'));
-                                }),
-                            _drawerItems(
-                                title: 'Sofas',
-                                image: 'Sofas',
-                                onPressed: () {
-                                  Push(context,
-                                      screen: ProductListing(title: 'Sofas'));
-                                }),
-                            _drawerItems(
-                                title: 'Chairs',
-                                image: 'Chairs',
-                                onPressed: () {
-                                  Push(context,
-                                      screen: ProductListing(title: 'Chairs'));
-                                }),
-                            _drawerItems(
-                                title: 'Cupboards',
-                                image: 'Cupboards',
-                                onPressed: () {
-                                  Push(context,
-                                      screen:
-                                          ProductListing(title: 'Cupboards'));
-                                }),
-                            _drawerItems(
-                                title: 'My Account',
-                                image: 'MyAccount',
-                                onPressed: () {
-                                  Push(context, screen: MyAccount());
-                                }),
-                            _drawerItems(
-                                title: 'Store Locator',
-                                image: 'StoreLocator',
-                                onPressed: () {
-                                  Push(context, screen: NeoStoreScreen());
-                                }),
-                            _drawerItems(
-                              title: 'My Orders',
-                              image: 'MyOrders',
-                              onPressed: () {
-                                Push(
-                                  context,
-                                  screen: BlocProvider(
-                                    create: (context) => OrdersListBLOC(),
-                                    child: MyOrders(),
-                                  ),
-                                );
-                              },
-                            ),
-                            _drawerItems(
-                              title: 'Logout',
-                              image: 'Logout',
-                              onPressed: _logout,
-                            ),
-                          ],
-                        );
-                      }
-                      return SizedBox.shrink();
-                    },
-                  );
+                    email = snapshot.data!.data!.data!.userData!.email;
 
-                default:
-                  return SizedBox.shrink();
+                    return BlocBuilder<GetListCartItemsBLOC,
+                        ApiResponse<GetListCartItemsResponse>>(
+                      builder: (context, state) {
+                        if (state.status == Status.LOADING) {
+                          return Center(
+                            child: CircularProgressCustom(),
+                          );
+                        } else if (state.status == Status.ERROR) {
+                          return ErrorWidgetCustom(
+                            message: state.message!,
+                            onPressed: () {
+                              _getListCartItemsBLOC!.add(Status.LOADING);
+                            },
+                          );
+                        } else if (state.status == Status.COMPLETED) {
+                          final cartItemsLength = state.data!.count;
+
+                          return ListView(
+                            children: [
+                              _drawerHeader(),
+                              SizedBox(height: 3.h),
+                              _drawerItems(
+                                title: 'My Cart',
+                                image: 'MyCart',
+                                trailing: cartItemsLength != null
+                                    ? _cartIemCount(cartItemsLength)
+                                    : SizedBox.shrink(),
+                                onPressed: () {
+                                  Push(
+                                    context,
+                                    screen: BlocProvider(
+                                      create: (context) =>
+                                          GetListCartItemsBLOC(),
+                                      child: MyCart(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _drawerItems(
+                                  title: 'Tables',
+                                  image: 'Tables',
+                                  onPressed: () {
+                                    Push(context,
+                                        screen:
+                                            ProductListing(title: 'Tables'));
+                                  }),
+                              _drawerItems(
+                                  title: 'Sofas',
+                                  image: 'Sofas',
+                                  onPressed: () {
+                                    Push(context,
+                                        screen: ProductListing(title: 'Sofas'));
+                                  }),
+                              _drawerItems(
+                                  title: 'Chairs',
+                                  image: 'Chairs',
+                                  onPressed: () {
+                                    Push(context,
+                                        screen:
+                                            ProductListing(title: 'Chairs'));
+                                  }),
+                              _drawerItems(
+                                  title: 'Cupboards',
+                                  image: 'Cupboards',
+                                  onPressed: () {
+                                    Push(context,
+                                        screen:
+                                            ProductListing(title: 'Cupboards'));
+                                  }),
+                              _drawerItems(
+                                  title: 'My Account',
+                                  image: 'MyAccount',
+                                  onPressed: () {
+                                    Push(context, screen: MyAccount());
+                                  }),
+                              _drawerItems(
+                                  title: 'Store Locator',
+                                  image: 'StoreLocator',
+                                  onPressed: () {
+                                    Push(context, screen: NeoStoreScreen());
+                                  }),
+                              _drawerItems(
+                                title: 'My Orders',
+                                image: 'MyOrders',
+                                onPressed: () {
+                                  Push(
+                                    context,
+                                    screen: BlocProvider(
+                                      create: (context) => OrdersListBLOC(),
+                                      child: MyOrders(),
+                                    ),
+                                  );
+                                },
+                              ),
+                              _drawerItems(
+                                title: 'Logout',
+                                image: 'Logout',
+                                onPressed: _logout,
+                              ),
+                            ],
+                          );
+                        }
+                        return SizedBox.shrink();
+                      },
+                    );
+
+                  default:
+                    return SizedBox.shrink();
+                }
               }
-            }
 
-            return Center(
-              child: CircularProgressCustom(),
-            );
-          },
+              return Center(
+                child: CircularProgressCustom(),
+              );
+            },
+          ),
         ),
       ),
     );
@@ -281,7 +300,7 @@ class _HomeScreenState extends State<HomeScreen> {
           padding: EdgeInsets.symmetric(horizontal: 4.w),
           child: FittedBox(
             child: Text(
-              "Salahuddin Shaikh",
+              this.name!,
               style: TextStyle(
                 fontWeight: FontWeight.w600,
                 fontSize: 19.sp,
@@ -292,7 +311,7 @@ class _HomeScreenState extends State<HomeScreen> {
         SizedBox(height: 1.5.h),
         FittedBox(
           child: Text(
-            "salahuddinshaikh16@gmail.com",
+            this.email!,
             style: TextStyle(),
           ),
         ),
@@ -309,19 +328,21 @@ class _HomeScreenState extends State<HomeScreen> {
         shape: BoxShape.circle,
         color: Colors.white,
       ),
-      child: Container(
-        margin: EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          color: Colors.red,
-          image: DecorationImage(
-            image: CachedNetworkImageProvider(
-              profilePhoto!,
+      child: profilePhoto == null
+          ? NoImage()
+          : Container(
+              margin: EdgeInsets.all(4),
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.red,
+                image: DecorationImage(
+                  image: CachedNetworkImageProvider(
+                    profilePhoto!,
+                  ),
+                  fit: BoxFit.cover,
+                ),
+              ),
             ),
-            fit: BoxFit.cover,
-          ),
-        ),
-      ),
     );
   }
 

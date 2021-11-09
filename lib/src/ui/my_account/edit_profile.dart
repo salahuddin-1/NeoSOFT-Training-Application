@@ -21,7 +21,7 @@ class EditProfile extends StatefulWidget {
   final String email;
   final String phoneNumber;
   final String dob;
-  final String profilePicURL;
+  final String? profilePicURL;
 
   const EditProfile({
     Key? key,
@@ -30,7 +30,7 @@ class EditProfile extends StatefulWidget {
     required this.email,
     required this.phoneNumber,
     required this.dob,
-    required this.profilePicURL,
+    this.profilePicURL,
   }) : super(key: key);
 
   @override
@@ -164,21 +164,26 @@ class _EditProfileState extends State<EditProfile> {
       child: Container(
         height: 33.w,
         width: 33.w,
-        decoration: BoxDecoration(
-          color: White,
-          shape: BoxShape.circle,
-          image: tempImageFile != null
-              ? DecorationImage(
-                  image: FileImage(tempImageFile!),
-                  fit: BoxFit.cover,
-                )
-              : DecorationImage(
-                  image: CachedNetworkImageProvider(
-                    widget.profilePicURL,
-                  ),
-                  fit: BoxFit.cover,
-                ),
-        ),
+        decoration: widget.profilePicURL == null && tempImageFile == null
+            ? BoxDecoration(
+                color: White,
+                shape: BoxShape.circle,
+              )
+            : BoxDecoration(
+                color: White,
+                shape: BoxShape.circle,
+                image: tempImageFile != null
+                    ? DecorationImage(
+                        image: FileImage(tempImageFile!),
+                        fit: BoxFit.cover,
+                      )
+                    : DecorationImage(
+                        image: CachedNetworkImageProvider(
+                          widget.profilePicURL!,
+                        ),
+                        fit: BoxFit.cover,
+                      ),
+              ),
         child: InkWell(
           onTap: _showModalBottomSheet,
           child: Container(
@@ -250,7 +255,11 @@ class _EditProfileState extends State<EditProfile> {
 
   TextFormField _dobTextField() {
     return TextFormField(
+      onTap: () {
+        _pickDateOfBirth();
+      },
       controller: _dobCntrl,
+      readOnly: true,
       style: _inputColor(),
       cursorColor: White,
       decoration: borderDecoration(
@@ -265,6 +274,23 @@ class _EditProfileState extends State<EditProfile> {
   SizedBox get _sizeBox => SizedBox(height: 2.h);
 
   // ----------------------------- EVENTS --------------------------------------
+
+  _pickDateOfBirth() async {
+    final date = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime(1910),
+      lastDate: DateTime.now(),
+    );
+
+    if (date != null) {
+      final day = date.day.toString();
+      final month = date.month.toString();
+      final year = date.year.toString();
+
+      _dobCntrl.text = day + '-' + month + '-' + year;
+    }
+  }
 
   Future<dynamic> _showModalBottomSheet() {
     return showModalBottomSheet(
