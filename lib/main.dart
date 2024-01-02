@@ -36,6 +36,7 @@ class MyApp extends StatelessWidget {
         displayColor: Colors.white,
       ),
       appBarTheme: AppBarTheme(
+        backgroundColor: Red,
         centerTitle: true,
         textTheme: TextTheme(
           headline6: TextStyle(
@@ -45,6 +46,12 @@ class MyApp extends StatelessWidget {
         ),
         elevation: 0,
       ),
+      // primarySwatch: Red,
+      // primaryTextTheme: TextTheme(
+      //   headline6: TextStyle(
+      //     color: Colors.red,
+      //   ),
+      // ),
     );
   }
 }
